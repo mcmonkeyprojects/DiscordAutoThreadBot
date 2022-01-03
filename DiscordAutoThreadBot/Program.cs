@@ -35,6 +35,7 @@ namespace DiscordAutoThreadBot
                 Initialize = Initialize,
                 CommandPrefix = null,
                 ShouldPayAttentionToMessage = (message) => message is SocketUserMessage uMessage && uMessage.Channel is SocketGuildChannel,
+                GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.GuildMessages | GatewayIntents.GuildMembers,
                 OnShutdown = () =>
                 {
                     ConsoleCancelToken.Cancel();
@@ -54,12 +55,47 @@ namespace DiscordAutoThreadBot
             bot.RegisterCommand(AutoThreadBotCommands.Command_Add, "add");
             bot.RegisterCommand(AutoThreadBotCommands.Command_Remove, "remove");
             bot.Client.ThreadCreated += NewThreadHandle;
+            bot.Client.Ready += () =>
             {
+                Task.Factory.StartNew(() =>
+                {
+                    try
+                    {
+                        foreach (SocketGuild guild in bot.Client.Guilds)
+                        {
+                            Console.WriteLine($"First-load of users in guild: {guild.Id}");
+                            guild.DownloadUsersAsync().Wait();
+                            Console.WriteLine($"Completed first-load of guild: {guild.Id}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Loading error: {ex}");
+                    }
+                });
+                return Task.CompletedTask;
+            };
+            bot.Client.GuildAvailable += (guild) =>
+            {
+                Task.Factory.StartNew(() =>
+                {
+                    Console.WriteLine($"Seen new guild: {guild.Id}");
+                    try
+                    {
+                        guild.DownloadUsersAsync().Wait();
+                        Console.WriteLine($"Completed load of guild: {guild.Id}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Guild-scanning error: {ex}");
+                    }
+                });
+                return Task.CompletedTask;
             };
         }
 
         /// <summary>The actual primary method of this program. Does the adding of users to threads.</summary>
-        public static Task NewThreadHandle(SocketThreadChannel thread)
+        public static Task NewThreadHandle(SocketThreadChannel thread) // can't be C# async due to the lock
         {
             TrackedUserListHelper list = TrackedUserListHelper.GetHelperFor(thread.Guild.Id);
             lock (list.Locker)
@@ -69,6 +105,8 @@ namespace DiscordAutoThreadBot
                     SocketGuildUser user = thread.Guild.GetUser(userId);
                     if (user is null)
                     {
+                        Console.WriteLine($"Failed to add thread user {user.Id}");
+                        thread.SendMessageAsync(embed: new EmbedBuilder().WithTitle("Error").WithDescription($"Failed to add user {user.Id} - did they leave the Discord?").Build()).Wait();
                         list.InternalData.Users.Remove(userId);
                         list.Modified = true;
                     }

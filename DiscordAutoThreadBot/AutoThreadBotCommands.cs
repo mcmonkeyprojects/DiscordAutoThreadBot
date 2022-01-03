@@ -46,9 +46,9 @@ namespace DiscordAutoThreadBot
                 SendGenericNegativeMessageReply(command.Message, "Invalid Input", "Give a user ID or @ mention. Any other input won't work.");
                 return;
             }
-            if (channel.Guild.GetUser(userId) is null)
+            if (DiscordBotBaseHelper.CurrentBot.Client.GetUser(userId) is null)
             {
-                SendGenericNegativeMessageReply(command.Message, "Invalid Input", "That user doesn't seem to exist in this Discord.");
+                SendGenericNegativeMessageReply(command.Message, "Invalid Input", "That user doesn't seem to exist.");
                 return;
             }
             TrackedUserListHelper helper = TrackedUserListHelper.GetHelperFor(channel.Guild.Id);

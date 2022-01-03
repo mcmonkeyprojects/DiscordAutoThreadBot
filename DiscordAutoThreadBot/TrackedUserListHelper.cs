@@ -91,7 +91,7 @@ namespace DiscordAutoThreadBot
         {
             try
             {
-                FDSUtility.ReadFile(FilePath);
+                InternalData.Load(FDSUtility.ReadFile(FilePath));
             }
             catch (FileNotFoundException)
             {
