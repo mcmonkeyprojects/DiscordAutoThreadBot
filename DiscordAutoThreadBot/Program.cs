@@ -57,6 +57,7 @@ namespace DiscordAutoThreadBot
             bot.Client.ThreadCreated += NewThreadHandle;
             bot.Client.Ready += () =>
             {
+                bot.Client.SetGameAsync("for new threads", type: ActivityType.Watching);
                 Task.Factory.StartNew(() =>
                 {
                     try
