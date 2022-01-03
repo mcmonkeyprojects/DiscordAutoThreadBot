@@ -1,0 +1,62 @@
+DiscordAutoThreadBot
+--------------------
+
+A simple Discord bot to allow users to automatically join any newly created thread.
+
+The way it works is simple: somebody with admin permission on the Discord can type `@AutoThreadsBot add (user)` to add a user to the list, or `remove` to remove them.
+
+The `(user)` can be either a user ID, or an `@ping` of the user.
+
+Whenever a thread is created, all users on the list get added to the thread.
+
+Users on the list can block the bot to be added to the thread without seeing the notification.
+
+There is a maximum of 15 users you can add to the list. This is because adding new users to a thread gets rate limited (4 users per second) so the more you have, the longer the bot has to freeze for each thread.
+
+If you're running your own instance, you can edit this number by editing `TrackedUserListHelper.cs`, find the `public const int MAXIMUM_PER_LIST = 15;` line and change `15` to whatever you please.
+
+If you reach the limit, check `@AutoThreadsBot list` to see if there's any users you can remove.
+
+### Setup Your Own Instance
+
+- 0: Before setup: This is intended to run on a Linux server, with `git`, `screen`, and `dotnet-6-sdk` installed. If you're not in this environment... you're on your own for making it work. Should be easy, but I'm only documenting my own use case here.
+- 1: Clone this repo with `git clone`
+- 2: Make sure to checkout submodules as well: `git submodule update --init --recursive` (the `start.sh` will automatically do this for you)
+- 3: create folder `config` at top level
+- 4: You need to have a Discord bot already - check [this guide](https://discordpy.readthedocs.io/en/stable/discord.html) if you don't know how to get one. Requires messages intent, and slash commands grant. Make sure to add the bot to your server(s).
+- 5: within `config` create file `token.txt` with contents being your Discord bot's token
+- 6: `./start.sh`. Will run in a screen which you can attach to with `screen -r autothreadbot`
+
+### Licensing pre-note:
+
+This is an open source project, provided entirely freely, for everyone to use and contribute to.
+
+If you make any changes that could benefit the community as a whole, please contribute upstream.
+
+### The short of the license is:
+
+You can do basically whatever you want (as long as you give credit), except you may not hold any developer liable for what you do with the software.
+
+### The long version of the license follows:
+
+The MIT License (MIT)
+
+Copyright (c) 2022 Alex "mcmonkey" Goodwin
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
