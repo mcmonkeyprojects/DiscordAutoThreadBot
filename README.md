@@ -17,6 +17,10 @@ If you're running your own instance, you can edit this number by editing `Tracke
 
 If you reach the limit, check `@AutoThreadsBot list` to see if there's any users you can remove.
 
+### Want To Add The Public Instance?
+
+- Just [click here](https://discord.com/api/oauth2/authorize?client_id=927424149268336691&permissions=292057779200&scope=bot%20applications.commands).
+
 ### Setup Your Own Instance
 
 - 0: Before setup: This is intended to run on a Linux server, with `git`, `screen`, and `dotnet-6-sdk` installed. If you're not in this environment... you're on your own for making it work. Should be easy, but I'm only documenting my own use case here.

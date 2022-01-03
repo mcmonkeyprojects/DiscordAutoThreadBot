@@ -2,12 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.IO;
+using System.Threading.Tasks;
 using System.Runtime.Loader;
 using DiscordBotBase;
 using Discord.WebSocket;
-using DiscordBotBase.CommandHandlers;
 using Discord;
 using System.Threading;
 using FreneticUtilities.FreneticExtensions;
@@ -20,6 +19,15 @@ namespace DiscordAutoThreadBot
         public static void Main(string[] args)
         {
             SpecialTools.Internationalize();
+            AssemblyLoadContext.Default.Unloading += (context) =>
+            {
+                TrackedUserListHelper.Shutdown();
+            };
+            AppDomain.CurrentDomain.ProcessExit += (obj, e) =>
+            {
+                TrackedUserListHelper.Shutdown();
+            };
+            Directory.CreateDirectory("./config/saves");
             DiscordBotConfig config = new()
             {
                 CacheSize = 0,
@@ -30,6 +38,7 @@ namespace DiscordAutoThreadBot
                 OnShutdown = () =>
                 {
                     ConsoleCancelToken.Cancel();
+                    TrackedUserListHelper.Shutdown();
                 }
             };
             Task consoleThread = Task.Run(ConsoleLoop, ConsoleCancelToken.Token);
@@ -41,6 +50,35 @@ namespace DiscordAutoThreadBot
         public static void Initialize(DiscordBot bot)
         {
             bot.RegisterCommand(AutoThreadBotCommands.Command_Help, "help", "halp", "hlp", "?");
+            bot.RegisterCommand(AutoThreadBotCommands.Command_List, "list");
+            bot.RegisterCommand(AutoThreadBotCommands.Command_Add, "add");
+            bot.RegisterCommand(AutoThreadBotCommands.Command_Remove, "remove");
+            bot.Client.ThreadCreated += NewThreadHandle;
+            {
+            };
+        }
+
+        /// <summary>The actual primary method of this program. Does the adding of users to threads.</summary>
+        public static Task NewThreadHandle(SocketThreadChannel thread)
+        {
+            TrackedUserListHelper list = TrackedUserListHelper.GetHelperFor(thread.Guild.Id);
+            lock (list.Locker)
+            {
+                foreach (ulong userId in list.InternalData.Users.ToArray()) // ToArray to allow 'Remove' call
+                {
+                    SocketGuildUser user = thread.Guild.GetUser(userId);
+                    if (user is null)
+                    {
+                        list.InternalData.Users.Remove(userId);
+                        list.Modified = true;
+                    }
+                    else
+                    {
+                        thread.AddUserAsync(user).Wait();
+                    }
+                }
+            }
+            return Task.CompletedTask;
         }
 
         public static async void ConsoleLoop()
@@ -62,6 +100,7 @@ namespace DiscordAutoThreadBot
                     case "stop":
                         {
                             Console.WriteLine("Clearing up...");
+                            TrackedUserListHelper.Shutdown();
                             Console.WriteLine("Shutting down...");
                             Environment.Exit(0);
                         }
