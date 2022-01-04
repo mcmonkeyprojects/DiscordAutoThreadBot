@@ -30,7 +30,7 @@ namespace DiscordAutoThreadBot
             Directory.CreateDirectory("./config/saves");
             DiscordBotConfig config = new()
             {
-                CacheSize = 0,
+                CacheSize = 5, // Small cache to reduce chance of bot forgetting channels exist
                 EnsureCaching = false,
                 Initialize = Initialize,
                 CommandPrefix = null,
