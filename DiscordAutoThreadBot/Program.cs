@@ -54,7 +54,7 @@ namespace DiscordAutoThreadBot
             bot.RegisterCommand(AutoThreadBotCommands.Command_List, "list");
             bot.RegisterCommand(AutoThreadBotCommands.Command_Add, "add");
             bot.RegisterCommand(AutoThreadBotCommands.Command_Remove, "remove");
-            bot.RegisterCommand(AutoThreadBotCommands.Command_FirstMessage, "firstmessage", "first-message");
+            bot.RegisterCommand(AutoThreadBotCommands.Command_FirstMessage, "firstmessage");
             bot.Client.ThreadCreated += (thread) => NewThreadHandle(bot, thread);
             bot.Client.Ready += () =>
             {
@@ -96,10 +96,17 @@ namespace DiscordAutoThreadBot
             };
         }
 
+        /// <summary>Temporary (in-RAM) list of seen threads, to avoid duplication.</summary>
+        public static HashSet<ulong> SeenThreads = new();
+
         /// <summary>The actual primary method of this program. Does the adding of users to threads.</summary>
         public static Task NewThreadHandle(DiscordBot bot, SocketThreadChannel thread) // can't be C# async due to the lock
         {
             if (bot.BotMonitor.ShouldStopAllLogic())
+            {
+                return Task.CompletedTask;
+            }
+            if (!SeenThreads.Add(thread.Id))
             {
                 return Task.CompletedTask;
             }

@@ -146,7 +146,7 @@ namespace DiscordAutoThreadBot
                 }
                 else
                 {
-                    helper.InternalData.FirstMessage = command.Message.Content.Replace($"<@{command.Bot.Client.CurrentUser.Id}>", "").Replace($"<@!{command.Bot.Client.CurrentUser.Id}>", "").Trim();
+                    helper.InternalData.FirstMessage = command.Message.Content.After("firstmessage").Trim();
                     SendGenericPositiveMessageReply(command.Message, $"First-Message", $"First-Message set to:\n{helper.InternalData.FirstMessage}");
                 }
                 helper.Modified = true;
