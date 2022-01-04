@@ -17,6 +17,8 @@ If you're running your own instance, you can edit this number by editing `GuildD
 
 If you reach the limit, check `@AutoThreadsBot list` to see if there's any users you can remove.
 
+You can also configure `@AutoThreadsBot firstmessage (text)` to set a message that the bot will post in any new thread, before adding users. You can use this to ping users to add them into threads too (as a way to reduce the delay for the ratelimit, at the cost of the annoying notification showing up for those users in the ping message).
+
 You can also use `@AutoThreadsBot autounlock true` (or `false`) to enable the bot automatically unlocking archived threads. This is a workaround for a bug in Discord where it automatically locks threads when archived by a moderator, despite that usually not being the intention.
 
 ### Want To Add The Public Instance?

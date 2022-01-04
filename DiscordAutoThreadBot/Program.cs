@@ -55,6 +55,7 @@ namespace DiscordAutoThreadBot
             bot.RegisterCommand(AutoThreadBotCommands.Command_Add, "add");
             bot.RegisterCommand(AutoThreadBotCommands.Command_Remove, "remove");
             bot.RegisterCommand(AutoThreadBotCommands.Command_AutoUnlock, "autounlock", "auto-unlock");
+            bot.RegisterCommand(AutoThreadBotCommands.Command_FirstMessage, "firstmessage", "first-message");
             bot.Client.ThreadCreated += (thread) => NewThreadHandle(bot, thread);
             bot.Client.ThreadUpdated += (oldThread, newThread) =>
             {
@@ -137,6 +138,11 @@ namespace DiscordAutoThreadBot
             GuildDataHelper helper = GuildDataHelper.GetHelperFor(thread.Guild.Id);
             lock (helper.Locker)
             {
+                if (!string.IsNullOrWhiteSpace(helper.InternalData.FirstMessage))
+                {
+                    thread.SendMessageAsync(text: helper.InternalData.FirstMessage).Wait();
+                }
+                List<Task> tasks = new();
                 foreach (ulong userId in helper.InternalData.Users.ToArray()) // ToArray to allow 'Remove' call
                 {
                     SocketGuildUser user = thread.Guild.GetUser(userId);
@@ -149,8 +155,12 @@ namespace DiscordAutoThreadBot
                     }
                     else
                     {
-                        thread.AddUserAsync(user).Wait();
+                        tasks.Add(thread.AddUserAsync(user));
                     }
+                }
+                foreach (Task task in tasks)
+                {
+                    task.Wait();
                 }
             }
             return Task.CompletedTask;
