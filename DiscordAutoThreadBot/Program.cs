@@ -54,7 +54,39 @@ namespace DiscordAutoThreadBot
             bot.RegisterCommand(AutoThreadBotCommands.Command_List, "list");
             bot.RegisterCommand(AutoThreadBotCommands.Command_Add, "add");
             bot.RegisterCommand(AutoThreadBotCommands.Command_Remove, "remove");
-            bot.Client.ThreadCreated += NewThreadHandle;
+            bot.RegisterCommand(AutoThreadBotCommands.Command_AutoUnlock, "autounlock", "auto-unlock");
+            bot.Client.ThreadCreated += (thread) => NewThreadHandle(bot, thread);
+            bot.Client.ThreadUpdated += (oldThread, newThread) =>
+            {
+                if (bot.BotMonitor.ShouldStopAllLogic())
+                {
+                    return Task.CompletedTask;
+                }
+                if (!oldThread.HasValue)
+                {
+                    return Task.CompletedTask;
+                }
+                if (oldThread.Value.IsArchived || !newThread.IsArchived || !newThread.IsLocked)
+                {
+                    return Task.CompletedTask;
+                }
+                GuildDataHelper helper = GuildDataHelper.GetHelperFor(newThread.Guild.Id);
+                lock (helper.Locker)
+                {
+                    if (helper.InternalData.AutoUnlock)
+                    {
+                        try
+                        {
+                            newThread.ModifyAsync(p => p.Locked = false).Wait();
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Failed to unlock thread: {ex}");
+                        }
+                    }
+                }
+                return Task.CompletedTask;
+            };
             bot.Client.Ready += () =>
             {
                 bot.Client.SetGameAsync("for new threads", type: ActivityType.Watching);
@@ -96,20 +128,24 @@ namespace DiscordAutoThreadBot
         }
 
         /// <summary>The actual primary method of this program. Does the adding of users to threads.</summary>
-        public static Task NewThreadHandle(SocketThreadChannel thread) // can't be C# async due to the lock
+        public static Task NewThreadHandle(DiscordBot bot, SocketThreadChannel thread) // can't be C# async due to the lock
         {
-            GuildDataHelper list = GuildDataHelper.GetHelperFor(thread.Guild.Id);
-            lock (list.Locker)
+            if (bot.BotMonitor.ShouldStopAllLogic())
             {
-                foreach (ulong userId in list.InternalData.Users.ToArray()) // ToArray to allow 'Remove' call
+                return Task.CompletedTask;
+            }
+            GuildDataHelper helper = GuildDataHelper.GetHelperFor(thread.Guild.Id);
+            lock (helper.Locker)
+            {
+                foreach (ulong userId in helper.InternalData.Users.ToArray()) // ToArray to allow 'Remove' call
                 {
                     SocketGuildUser user = thread.Guild.GetUser(userId);
                     if (user is null)
                     {
                         Console.WriteLine($"Failed to add thread user {user.Id}");
                         thread.SendMessageAsync(embed: new EmbedBuilder().WithTitle("Error").WithDescription($"Failed to add user {user.Id} - did they leave the Discord?").Build()).Wait();
-                        list.InternalData.Users.Remove(userId);
-                        list.Modified = true;
+                        helper.InternalData.Users.Remove(userId);
+                        helper.Modified = true;
                     }
                     else
                     {

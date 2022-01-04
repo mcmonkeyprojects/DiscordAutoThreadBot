@@ -17,6 +17,8 @@ If you're running your own instance, you can edit this number by editing `GuildD
 
 If you reach the limit, check `@AutoThreadsBot list` to see if there's any users you can remove.
 
+You can also use `@AutoThreadsBot autounlock true` (or `false`) to enable the bot automatically unlocking archived threads. This is a workaround for a bug in Discord where it automatically locks threads when archived by a moderator, despite that usually not being the intention.
+
 ### Want To Add The Public Instance?
 
 - Just [click here](https://discord.com/api/oauth2/authorize?client_id=927424149268336691&permissions=292057779200&scope=bot%20applications.commands).

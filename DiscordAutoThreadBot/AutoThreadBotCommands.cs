@@ -22,6 +22,7 @@ namespace DiscordAutoThreadBot
                 + "\nThose with admin access on this Discord can type `@AutoThreadsBot add (user)` to add a user to the auto-threads-adder list,"
                 + "\nor type `@AutoThreadsBot remove (user)` to remove them from that list."
                 + "\nAlso `@AutoThreadsBot list` to view the current user list."
+                + "\nAlso `@AutoThreadsBot autounlock (true/false)` to configure whether the bot auto-unlocks archived threads (this is a workaround for a Discord bug)."
                 + "\nIf you're on the list, you can block this bot to hide the notifications but still be added to threads."
                 + "\n\nI'm [open source](https://github.com/mcmonkeyprojects/DiscordAutoThreadBot)!");
         }
@@ -114,6 +115,45 @@ namespace DiscordAutoThreadBot
             lock (helper.Locker)
             {
                 SendGenericPositiveMessageReply(command.Message, $"List of {helper.InternalData.Users.Count} Users", string.Join(", ", helper.InternalData.Users.Select(u => $"<@{u}>")));
+            }
+        }
+
+        /// <summary>A command for admins to toggle the auto-unlock feature.</summary>
+        public static void Command_AutoUnlock(CommandData command)
+        {
+            if (command.Message is not SocketUserMessage message || message.Channel is not SocketGuildChannel channel)
+            {
+                return;
+            }
+            if (!(message.Author as SocketGuildUser).GuildPermissions.Administrator)
+            {
+                SendGenericNegativeMessageReply(command.Message, "Not for you", "Only users with the **Admin** permission may use the `autounlock` command.");
+                return;
+            }
+            GuildDataHelper helper = GuildDataHelper.GetHelperFor(channel.Guild.Id);
+            lock (helper.Locker)
+            {
+                if (command.CleanedArguments.IsEmpty())
+                {
+                    SendGenericPositiveMessageReply(command.Message, $"Auto-Unlock Status", $"Auto-Unlock is: **{(helper.InternalData.AutoUnlock ? "enabled" : "disabled")}**");
+                }
+                else if (command.CleanedArguments[0].ToLowerFast() == "true")
+                {
+                    helper.InternalData.AutoUnlock = true;
+                    SendGenericPositiveMessageReply(command.Message, $"Auto-Unlock Status", $"Auto-Unlock is now enabled.");
+                }
+                else if (command.CleanedArguments[0].ToLowerFast() == "false")
+                {
+                    helper.InternalData.AutoUnlock = false;
+                    SendGenericPositiveMessageReply(command.Message, $"Auto-Unlock Status", $"Auto-Unlock is now disabled.");
+                }
+                else
+                {
+                    SendGenericNegativeMessageReply(command.Message, $"Invalid Input", "Input must be `true` or `false`.");
+                    return;
+                }
+                helper.Modified = true;
+                helper.Save();
             }
         }
     }
