@@ -55,6 +55,7 @@ namespace DiscordAutoThreadBot
             bot.RegisterCommand(AutoThreadBotCommands.Command_Add, "add");
             bot.RegisterCommand(AutoThreadBotCommands.Command_Remove, "remove");
             bot.RegisterCommand(AutoThreadBotCommands.Command_FirstMessage, "firstmessage");
+            bot.RegisterCommand(AutoThreadBotCommands.Command_Archive, "archive");
             bot.Client.ThreadCreated += (thread) => NewThreadHandle(bot, thread);
             bot.Client.Ready += () =>
             {
