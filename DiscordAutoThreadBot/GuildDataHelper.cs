@@ -61,9 +61,6 @@ namespace DiscordAutoThreadBot
             /// <summary>A list of relevant user IDs.</summary>
             public List<ulong> Users = new();
 
-            /// <summary>If true: auto-unlock threads when archived.</summary>
-            public bool AutoUnlock = false;
-
             /// <summary>If non-null: a message to post when new threads are created.</summary>
             public string FirstMessage = "";
         }

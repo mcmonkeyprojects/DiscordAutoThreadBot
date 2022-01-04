@@ -54,40 +54,8 @@ namespace DiscordAutoThreadBot
             bot.RegisterCommand(AutoThreadBotCommands.Command_List, "list");
             bot.RegisterCommand(AutoThreadBotCommands.Command_Add, "add");
             bot.RegisterCommand(AutoThreadBotCommands.Command_Remove, "remove");
-            bot.RegisterCommand(AutoThreadBotCommands.Command_AutoUnlock, "autounlock", "auto-unlock");
             bot.RegisterCommand(AutoThreadBotCommands.Command_FirstMessage, "firstmessage", "first-message");
             bot.Client.ThreadCreated += (thread) => NewThreadHandle(bot, thread);
-            bot.Client.ThreadUpdated += (oldThread, newThread) =>
-            {
-                if (bot.BotMonitor.ShouldStopAllLogic())
-                {
-                    return Task.CompletedTask;
-                }
-                if (!oldThread.HasValue)
-                {
-                    return Task.CompletedTask;
-                }
-                if (oldThread.Value.IsArchived || !newThread.IsArchived || !newThread.IsLocked)
-                {
-                    return Task.CompletedTask;
-                }
-                GuildDataHelper helper = GuildDataHelper.GetHelperFor(newThread.Guild.Id);
-                lock (helper.Locker)
-                {
-                    if (helper.InternalData.AutoUnlock)
-                    {
-                        try
-                        {
-                            newThread.ModifyAsync(p => p.Locked = false).Wait();
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"Failed to unlock thread: {ex}");
-                        }
-                    }
-                }
-                return Task.CompletedTask;
-            };
             bot.Client.Ready += () =>
             {
                 bot.Client.SetGameAsync("for new threads", type: ActivityType.Watching);

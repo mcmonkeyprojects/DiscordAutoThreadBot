@@ -119,45 +119,6 @@ namespace DiscordAutoThreadBot
             }
         }
 
-        /// <summary>A command for admins to toggle the auto-unlock feature.</summary>
-        public static void Command_AutoUnlock(CommandData command)
-        {
-            if (command.Message is not SocketUserMessage message || message.Channel is not SocketGuildChannel channel)
-            {
-                return;
-            }
-            if (!(message.Author as SocketGuildUser).GuildPermissions.Administrator)
-            {
-                SendGenericNegativeMessageReply(command.Message, "Not for you", "Only users with the **Admin** permission may use the `autounlock` command.");
-                return;
-            }
-            GuildDataHelper helper = GuildDataHelper.GetHelperFor(channel.Guild.Id);
-            lock (helper.Locker)
-            {
-                if (command.CleanedArguments.IsEmpty())
-                {
-                    SendGenericPositiveMessageReply(command.Message, $"Auto-Unlock Status", $"Auto-Unlock is: **{(helper.InternalData.AutoUnlock ? "enabled" : "disabled")}**");
-                }
-                else if (command.CleanedArguments[0].ToLowerFast() == "true")
-                {
-                    helper.InternalData.AutoUnlock = true;
-                    SendGenericPositiveMessageReply(command.Message, $"Auto-Unlock Status", $"Auto-Unlock is now enabled.");
-                }
-                else if (command.CleanedArguments[0].ToLowerFast() == "false")
-                {
-                    helper.InternalData.AutoUnlock = false;
-                    SendGenericPositiveMessageReply(command.Message, $"Auto-Unlock Status", $"Auto-Unlock is now disabled.");
-                }
-                else
-                {
-                    SendGenericNegativeMessageReply(command.Message, $"Invalid Input", "Input must be `true` or `false`.");
-                    return;
-                }
-                helper.Modified = true;
-                helper.Save();
-            }
-        }
-
         /// <summary>A command for admins to configure the first-message.</summary>
         public static void Command_FirstMessage(CommandData command)
         {
