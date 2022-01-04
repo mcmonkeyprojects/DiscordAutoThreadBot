@@ -13,7 +13,7 @@ Users on the list can block the bot to be added to the thread without seeing the
 
 There is a maximum of 15 users you can add to the list. This is because adding new users to a thread gets rate limited (4 users per second) so the more you have, the longer the bot has to freeze for each thread.
 
-If you're running your own instance, you can edit this number by editing `TrackedUserListHelper.cs`, find the `public const int MAXIMUM_PER_LIST = 15;` line and change `15` to whatever you please.
+If you're running your own instance, you can edit this number by editing `GuildDataHelper.cs`, find the `public const int MAXIMUM_PER_LIST = 15;` line and change `15` to whatever you please.
 
 If you reach the limit, check `@AutoThreadsBot list` to see if there's any users you can remove.
 

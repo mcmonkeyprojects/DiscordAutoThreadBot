@@ -21,11 +21,11 @@ namespace DiscordAutoThreadBot
             SpecialTools.Internationalize();
             AssemblyLoadContext.Default.Unloading += (context) =>
             {
-                TrackedUserListHelper.Shutdown();
+                GuildDataHelper.Shutdown();
             };
             AppDomain.CurrentDomain.ProcessExit += (obj, e) =>
             {
-                TrackedUserListHelper.Shutdown();
+                GuildDataHelper.Shutdown();
             };
             Directory.CreateDirectory("./config/saves");
             DiscordBotConfig config = new()
@@ -39,7 +39,7 @@ namespace DiscordAutoThreadBot
                 OnShutdown = () =>
                 {
                     ConsoleCancelToken.Cancel();
-                    TrackedUserListHelper.Shutdown();
+                    GuildDataHelper.Shutdown();
                 }
             };
             Task consoleThread = Task.Run(ConsoleLoop, ConsoleCancelToken.Token);
@@ -98,7 +98,7 @@ namespace DiscordAutoThreadBot
         /// <summary>The actual primary method of this program. Does the adding of users to threads.</summary>
         public static Task NewThreadHandle(SocketThreadChannel thread) // can't be C# async due to the lock
         {
-            TrackedUserListHelper list = TrackedUserListHelper.GetHelperFor(thread.Guild.Id);
+            GuildDataHelper list = GuildDataHelper.GetHelperFor(thread.Guild.Id);
             lock (list.Locker)
             {
                 foreach (ulong userId in list.InternalData.Users.ToArray()) // ToArray to allow 'Remove' call
@@ -139,7 +139,7 @@ namespace DiscordAutoThreadBot
                     case "stop":
                         {
                             Console.WriteLine("Clearing up...");
-                            TrackedUserListHelper.Shutdown();
+                            GuildDataHelper.Shutdown();
                             Console.WriteLine("Shutting down...");
                             Environment.Exit(0);
                         }

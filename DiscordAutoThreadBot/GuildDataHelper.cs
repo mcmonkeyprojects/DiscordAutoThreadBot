@@ -11,9 +11,9 @@ using FreneticUtilities.FreneticToolkit;
 namespace DiscordAutoThreadBot
 {
     /// <summary>
-    /// The primary helper to track the per-guild user list.
+    /// The primary helper to track the per-guild data (user list, etc).
     /// </summary>
-    public class TrackedUserListHelper
+    public class GuildDataHelper
     {
         /// <summary>
         /// ================================================================================
@@ -23,15 +23,15 @@ namespace DiscordAutoThreadBot
         /// </summary>
         public const int MAXIMUM_PER_LIST = 15;
 
-        /// <summary>User lists per-guild.</summary>
-        public static ConcurrentDictionary<ulong, TrackedUserListHelper> GuildLists = new();
+        /// <summary>Data per-guild.</summary>
+        public static ConcurrentDictionary<ulong, GuildDataHelper> GuildLists = new();
 
         /// <summary>Gets or creates the helper instance for a given guild ID.</summary>
-        public static TrackedUserListHelper GetHelperFor(ulong guild)
+        public static GuildDataHelper GetHelperFor(ulong guild)
         {
             return GuildLists.GetOrAdd(guild, guildId =>
             {
-                TrackedUserListHelper helper = new() { Guild = guildId };
+                GuildDataHelper helper = new() { Guild = guildId };
                 helper.Load();
                 helper.Modified = true;
                 return helper;
@@ -41,7 +41,7 @@ namespace DiscordAutoThreadBot
         /// <summary>Shuts down and saves all lists.</summary>
         public static void Shutdown()
         {
-            foreach (TrackedUserListHelper helper in GuildLists.Values)
+            foreach (GuildDataHelper helper in GuildLists.Values)
             {
                 try
                 {
@@ -60,6 +60,12 @@ namespace DiscordAutoThreadBot
         {
             /// <summary>A list of relevant user IDs.</summary>
             public List<ulong> Users = new();
+
+            /// <summary>If true: auto-unlock threads when archived.</summary>
+            public bool AutoUnlock = false;
+
+            /// <summary>If non-null: a message to post when new threads are created.</summary>
+            public string FirstMessage = "";
         }
 
         public LockObject Locker = new();

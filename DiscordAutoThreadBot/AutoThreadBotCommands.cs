@@ -46,17 +46,17 @@ namespace DiscordAutoThreadBot
                 SendGenericNegativeMessageReply(command.Message, "Invalid Input", "Give a user ID or @ mention. Any other input won't work.");
                 return;
             }
-            if (DiscordBotBaseHelper.CurrentBot.Client.GetUser(userId) is null)
+            if (command.Bot.Client.GetUser(userId) is null)
             {
                 SendGenericNegativeMessageReply(command.Message, "Invalid Input", "That user doesn't seem to exist.");
                 return;
             }
-            TrackedUserListHelper helper = TrackedUserListHelper.GetHelperFor(channel.Guild.Id);
+            GuildDataHelper helper = GuildDataHelper.GetHelperFor(channel.Guild.Id);
             lock (helper.Locker)
             {
-                if (helper.InternalData.Users.Count >= TrackedUserListHelper.MAXIMUM_PER_LIST)
+                if (helper.InternalData.Users.Count >= GuildDataHelper.MAXIMUM_PER_LIST)
                 {
-                    SendGenericNegativeMessageReply(command.Message, "List too long.", $"The user list has reached the limit of {TrackedUserListHelper.MAXIMUM_PER_LIST}.\nRemove some users to be able to add more.");
+                    SendGenericNegativeMessageReply(command.Message, "List too long.", $"The user list has reached the limit of {GuildDataHelper.MAXIMUM_PER_LIST}.\nRemove some users to be able to add more.");
                     return;
                 }
                 helper.InternalData.Users.Add(userId);
@@ -83,7 +83,7 @@ namespace DiscordAutoThreadBot
                 SendGenericNegativeMessageReply(command.Message, "Invalid Input", "Give a user ID or @ mention. Any other input won't work.");
                 return;
             }
-            TrackedUserListHelper helper = TrackedUserListHelper.GetHelperFor(channel.Guild.Id);
+            GuildDataHelper helper = GuildDataHelper.GetHelperFor(channel.Guild.Id);
             lock (helper.Locker)
             {
                 if (!helper.InternalData.Users.Contains(userId))
@@ -110,7 +110,7 @@ namespace DiscordAutoThreadBot
                 SendGenericNegativeMessageReply(command.Message, "Not for you", "Only users with the **Admin** permission may use the `list` command.");
                 return;
             }
-            TrackedUserListHelper helper = TrackedUserListHelper.GetHelperFor(channel.Guild.Id);
+            GuildDataHelper helper = GuildDataHelper.GetHelperFor(channel.Guild.Id);
             lock (helper.Locker)
             {
                 SendGenericPositiveMessageReply(command.Message, $"List of {helper.InternalData.Users.Count} Users", string.Join(", ", helper.InternalData.Users.Select(u => $"<@{u}>")));
