@@ -56,6 +56,7 @@ namespace DiscordAutoThreadBot
             bot.RegisterCommand(AutoThreadBotCommands.Command_Remove, "remove");
             bot.RegisterCommand(AutoThreadBotCommands.Command_FirstMessage, "firstmessage");
             bot.RegisterCommand(AutoThreadBotCommands.Command_Archive, "archive");
+            bot.RegisterSlashCommand(AutoThreadBotCommands.SlashCommand_Archive, "archive");
             bot.Client.ThreadCreated += (thread) => NewThreadHandle(bot, thread);
             bot.Client.Ready += () =>
             {
@@ -76,6 +77,20 @@ namespace DiscordAutoThreadBot
                         Console.WriteLine($"Loading error: {ex}");
                     }
                 });
+                try
+                {
+                    const string commandVersionFile = "./config/command_registered_version.dat";
+                    const int commandVersion = 1;
+                    if (!File.Exists(commandVersionFile) || !int.TryParse(commandVersionFile, out int registered) || registered < commandVersion)
+                    {
+                        RegisterSlashCommands(bot);
+                        File.WriteAllText(commandVersionFile, commandVersion.ToString());
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Failed to update slash commands: {ex}");
+                }
                 return Task.CompletedTask;
             };
             bot.Client.GuildAvailable += (guild) =>
@@ -95,6 +110,12 @@ namespace DiscordAutoThreadBot
                 });
                 return Task.CompletedTask;
             };
+        }
+
+        public static void RegisterSlashCommands(DiscordBot bot)
+        {
+            SlashCommandBuilder archiveCommand = new SlashCommandBuilder().WithName("archive").WithDescription("Moves the current thread into archive without locking it. Requires 'Manage Threads' permission.");
+            bot.Client.BulkOverwriteGlobalApplicationCommandsAsync(new ApplicationCommandProperties[] { archiveCommand.Build() });
         }
 
         /// <summary>Temporary (in-RAM) list of seen threads, to avoid duplication.</summary>

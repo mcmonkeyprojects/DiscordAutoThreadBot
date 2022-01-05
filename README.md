@@ -19,7 +19,7 @@ If you reach the limit, check `@AutoThreadsBot list` to see if there's any users
 
 You can also configure `@AutoThreadsBot firstmessage (text)` to set a message that the bot will post in any new thread, before adding users. You can use this to ping users to add them into threads too (as a way to reduce the delay for the ratelimit, at the cost of the annoying notification showing up for those users in the ping message).
 
-Anybody who has the `Manage Threads` permission can use `@AutoThreadsBot archive` while in a thread to archive that thread without locking it.
+Anybody who has the `Manage Threads` permission can use `@AutoThreadsBot archive` while in a thread to archive that thread without locking it. This also is available as a `/archive` slash command.
 
 ### Want To Add The Public Instance?
 

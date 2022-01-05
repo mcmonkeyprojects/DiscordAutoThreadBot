@@ -168,5 +168,22 @@ namespace DiscordAutoThreadBot
             }
             channel.ModifyAsync(c => { c.Locked = false; c.Archived = true; }).Wait();
         }
+
+        /// <summary>A slash command for staff to archive a thread without locking it.</summary>
+        public static void SlashCommand_Archive(SocketSlashCommand command)
+        {
+            if (command.Channel is not SocketThreadChannel channel)
+            {
+                command.RespondAsync("This is only available in threads.", ephemeral: true).Wait();
+                return;
+            }
+            if (!(command.User as SocketGuildUser).GuildPermissions.ManageThreads)
+            {
+                SendGenericNegativeMessageReply(command, "Not for you", "Only users with the **Manage Threads** permission may use the `archive` command.");
+                return;
+            }
+            SendGenericPositiveMessageReply(command, "Thread Archived", $"Thread moving into archive on request of <@{command.User.Id}>.");
+            channel.ModifyAsync(c => { c.Locked = false; c.Archived = true; }).Wait();
+        }
     }
 }
