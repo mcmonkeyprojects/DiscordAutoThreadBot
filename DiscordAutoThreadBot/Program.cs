@@ -55,8 +55,6 @@ namespace DiscordAutoThreadBot
             bot.RegisterCommand(AutoThreadBotCommands.Command_Add, "add");
             bot.RegisterCommand(AutoThreadBotCommands.Command_Remove, "remove");
             bot.RegisterCommand(AutoThreadBotCommands.Command_FirstMessage, "firstmessage");
-            bot.RegisterCommand(AutoThreadBotCommands.Command_Archive, "archive");
-            bot.RegisterSlashCommand(AutoThreadBotCommands.SlashCommand_Archive, "archive");
             bot.Client.ThreadCreated += (thread) => NewThreadHandle(bot, thread);
             bot.Client.Ready += () =>
             {
@@ -80,7 +78,7 @@ namespace DiscordAutoThreadBot
                 try
                 {
                     const string commandVersionFile = "./config/command_registered_version.dat";
-                    const int commandVersion = 1;
+                    const int commandVersion = 2;
                     if (!File.Exists(commandVersionFile) || !int.TryParse(commandVersionFile, out int registered) || registered < commandVersion)
                     {
                         RegisterSlashCommands(bot);
@@ -114,8 +112,11 @@ namespace DiscordAutoThreadBot
 
         public static void RegisterSlashCommands(DiscordBot bot)
         {
-            SlashCommandBuilder archiveCommand = new SlashCommandBuilder().WithName("archive").WithDescription("Moves the current thread into archive without locking it. Requires 'Manage Threads' permission.");
-            bot.Client.BulkOverwriteGlobalApplicationCommandsAsync(new ApplicationCommandProperties[] { archiveCommand.Build() });
+            SocketApplicationCommand cmd = bot.Client.GetGlobalApplicationCommandsAsync().Result.FirstOrDefault(cmd => cmd.Name == "archive");
+            if (cmd is not null)
+            {
+                cmd.DeleteAsync().Wait();
+            }
         }
 
         /// <summary>Temporary (in-RAM) list of seen threads, to avoid duplication.</summary>
