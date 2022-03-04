@@ -11,6 +11,7 @@ using Discord;
 using System.Threading;
 using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
+using System.Collections.Concurrent;
 
 namespace DiscordAutoThreadBot
 {
@@ -50,6 +51,7 @@ namespace DiscordAutoThreadBot
 
         public static void Initialize(DiscordBot bot)
         {
+            SeenThreads.Clear();
             bot.RegisterCommand(AutoThreadBotCommands.Command_Help, "help", "halp", "hlp", "?");
             bot.RegisterCommand(AutoThreadBotCommands.Command_List, "list");
             bot.RegisterCommand(AutoThreadBotCommands.Command_Add, "add");
@@ -58,6 +60,7 @@ namespace DiscordAutoThreadBot
             bot.RegisterCommand(AutoThreadBotCommands.Command_FirstMessage, "firstmessage");
             bot.RegisterCommand(AutoThreadBotCommands.Command_AutoPrefix, "autoprefix");
             bot.Client.ThreadCreated += (thread) => NewThreadHandle(bot, thread);
+            bot.Client.MessageReceived += (message) => NewMessageHandle(message);
             bot.Client.Ready += () =>
             {
                 bot.Client.SetGameAsync("for new threads", type: ActivityType.Watching);
@@ -125,6 +128,17 @@ namespace DiscordAutoThreadBot
         /// <summary>Temporary (in-RAM) list of seen threads, to avoid duplication.</summary>
         public static HashSet<ulong> SeenThreads = new();
 
+        public static ConcurrentDictionary<ulong, Action<SocketMessage>> MessageSpecialHandlers = new();
+
+        public static Task NewMessageHandle(SocketMessage message)
+        {
+            if (MessageSpecialHandlers.TryRemove(message.Channel.Id, out Action<SocketMessage> handler))
+            {
+                handler(message);
+            }
+            return Task.CompletedTask;
+        }
+
         /// <summary>The actual primary method of this program. Does the adding of users to threads.</summary>
         public static Task NewThreadHandle(DiscordBot bot, SocketThreadChannel thread)
         {
@@ -136,6 +150,12 @@ namespace DiscordAutoThreadBot
             {
                 return Task.CompletedTask;
             }
+            Task.Factory.StartNew(() => HandleNewThread_Internal(bot, thread));
+            return Task.CompletedTask;
+        }
+
+        public static void HandleNewThread_Internal(DiscordBot bot, SocketThreadChannel thread)
+        {
             GuildDataHelper helper = GuildDataHelper.GetHelperFor(thread.Guild.Id);
             lock (helper.Locker)
             {
@@ -144,20 +164,15 @@ namespace DiscordAutoThreadBot
                 {
                     string senderName = null;
                     int tries = 0;
+                    long time = Environment.TickCount64;
+                    SocketMessage firstMessage = null;
+                    MessageSpecialHandlers[thread.Id] = (m) =>
+                    {
+                        firstMessage = m;
+                    };
                     while (true)
                     {
-                        thread.GetMessagesAsync().ForEachAsync((list) =>
-                        {
-                            if (!list.IsEmpty())
-                            {
-                                IGuildUser user = list.First() as IGuildUser;
-                                if (user is not null)
-                                {
-                                    senderName = user.Nickname ?? user.Username;
-                                }
-                            }
-                        }).Wait();
-                        if (senderName is null)
+                        if (firstMessage is null)
                         {
                             if (tries++ > 10)
                             {
@@ -170,13 +185,24 @@ namespace DiscordAutoThreadBot
                             break;
                         }
                     }
-                    if (senderName is not null && !thread.Name.StartsWithFast('(') && !thread.Name.StartsWithFast('[')) // reverify in case it changed
+                    MessageSpecialHandlers.Remove(thread.Id, out _);
+                    if (firstMessage is null)
                     {
-                        if (senderName.Length > 12)
+                        Console.WriteLine($"Failed to identify thread creator for thread {thread.Id}, wait {Environment.TickCount64 - time} ms.");
+                    }
+                    else if (!thread.Name.StartsWithFast('(') && !thread.Name.StartsWithFast('[')) // reverify in case it changed
+                    {
+                        Console.WriteLine($"Apply name correction to thread {thread.Id}");
+                        IGuildUser user = firstMessage.Author as IGuildUser;
+                        if (user is not null)
                         {
-                            senderName = senderName[0..10];
+                            senderName = user.Nickname ?? user.Username;
+                            if (senderName.Length > 12)
+                            {
+                                senderName = senderName[0..10];
+                            }
+                            tasks.Add(thread.ModifyAsync(t => t.Name = $"({senderName}) {thread.Name}"));
                         }
-                        tasks.Add(thread.ModifyAsync(t => t.Name = $"({senderName}) {thread.Name}"));
                     }
                 }
                 if (!string.IsNullOrWhiteSpace(helper.InternalData.FirstMessage))
@@ -206,7 +232,6 @@ namespace DiscordAutoThreadBot
                     task.Wait();
                 }
             }
-            return Task.CompletedTask;
         }
 
         public static async void ConsoleLoop()
