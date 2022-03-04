@@ -54,7 +54,9 @@ namespace DiscordAutoThreadBot
             bot.RegisterCommand(AutoThreadBotCommands.Command_List, "list");
             bot.RegisterCommand(AutoThreadBotCommands.Command_Add, "add");
             bot.RegisterCommand(AutoThreadBotCommands.Command_Remove, "remove");
+            bot.RegisterCommand(AutoThreadBotCommands.Command_User, "user");
             bot.RegisterCommand(AutoThreadBotCommands.Command_FirstMessage, "firstmessage");
+            bot.RegisterCommand(AutoThreadBotCommands.Command_AutoPrefix, "autoprefix");
             bot.Client.ThreadCreated += (thread) => NewThreadHandle(bot, thread);
             bot.Client.Ready += () =>
             {
@@ -112,6 +114,7 @@ namespace DiscordAutoThreadBot
 
         public static void RegisterSlashCommands(DiscordBot bot)
         {
+            // Clear out historical slash commands
             SocketApplicationCommand cmd = bot.Client.GetGlobalApplicationCommandsAsync().Result.FirstOrDefault(cmd => cmd.Name == "archive");
             if (cmd is not null)
             {
@@ -123,7 +126,7 @@ namespace DiscordAutoThreadBot
         public static HashSet<ulong> SeenThreads = new();
 
         /// <summary>The actual primary method of this program. Does the adding of users to threads.</summary>
-        public static Task NewThreadHandle(DiscordBot bot, SocketThreadChannel thread) // can't be C# async due to the lock
+        public static Task NewThreadHandle(DiscordBot bot, SocketThreadChannel thread)
         {
             if (bot.BotMonitor.ShouldStopAllLogic())
             {
@@ -136,11 +139,50 @@ namespace DiscordAutoThreadBot
             GuildDataHelper helper = GuildDataHelper.GetHelperFor(thread.Guild.Id);
             lock (helper.Locker)
             {
+                List<Task> tasks = new();
+                if (helper.InternalData.AutoPrefix && !thread.Name.StartsWithFast('(') && !thread.Name.StartsWithFast('['))
+                {
+                    string senderName = null;
+                    int tries = 0;
+                    while (true)
+                    {
+                        thread.GetMessagesAsync().ForEachAsync((list) =>
+                        {
+                            if (!list.IsEmpty())
+                            {
+                                IGuildUser user = list.First() as IGuildUser;
+                                if (user is not null)
+                                {
+                                    senderName = user.Nickname ?? user.Username;
+                                }
+                            }
+                        }).Wait();
+                        if (senderName is null)
+                        {
+                            if (tries++ > 10)
+                            {
+                                break;
+                            }
+                            Task.Delay(100).Wait();
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    if (senderName is not null && !thread.Name.StartsWithFast('(') && !thread.Name.StartsWithFast('[')) // reverify in case it changed
+                    {
+                        if (senderName.Length > 12)
+                        {
+                            senderName = senderName[0..10];
+                        }
+                        tasks.Add(thread.ModifyAsync(t => t.Name = $"({senderName}) {thread.Name}"));
+                    }
+                }
                 if (!string.IsNullOrWhiteSpace(helper.InternalData.FirstMessage))
                 {
-                    thread.SendMessageAsync(text: helper.InternalData.FirstMessage).Wait();
+                    tasks.Add(thread.SendMessageAsync(text: helper.InternalData.FirstMessage));
                 }
-                List<Task> tasks = new();
                 foreach (ulong userId in helper.InternalData.Users.ToArray()) // ToArray to allow 'Remove' call
                 {
                     SocketGuildUser user = thread.Guild.GetUser(userId);

@@ -74,6 +74,9 @@ namespace DiscordAutoThreadBot
             /// <summary>If non-null: a message to post when new threads are created.</summary>
             public string FirstMessage = "";
 
+            /// <summary>If true: automatically apply username prefixes to threads.</summary>
+            public bool AutoPrefix = false;
+
             /// <summary>A map of user IDs to their data.</summary>
             public Dictionary<ulong, UserData> UserData = new();
         }

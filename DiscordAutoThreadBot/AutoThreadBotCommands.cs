@@ -25,6 +25,7 @@ namespace DiscordAutoThreadBot
                 + "\nAlso `@AutoThreadsBot list` to view the current user list."
                 + "\nIf you're on the list, you can block this bot to hide the notifications but still be added to threads."
                 + "\nAlso `@AutoThreadsBot firstmessage (text)` to configure a message that the bot will show when a new thread is created."
+                + "\nAlso, `@AutoThreadsBot autoprefix true` to enable (or `false` to disable) automatic username thread prefixes."
                 + "\n\nI'm [open source](https://github.com/mcmonkeyprojects/DiscordAutoThreadBot)!");
         }
 
@@ -233,6 +234,45 @@ namespace DiscordAutoThreadBot
                 {
                     helper.InternalData.FirstMessage = command.Message.Content.After("firstmessage").Trim();
                     SendGenericPositiveMessageReply(command.Message, $"First-Message", $"First-Message set to:\n{helper.InternalData.FirstMessage}");
+                }
+                helper.Modified = true;
+                helper.Save();
+            }
+        }
+
+        /// <summary>A command for admins to enable the auto-prefix tool.</summary>
+        public static void Command_AutoPrefix(CommandData command)
+        {
+            if (command.Message is not SocketUserMessage message || message.Channel is not SocketGuildChannel channel)
+            {
+                return;
+            }
+            if (!(message.Author as SocketGuildUser).GuildPermissions.Administrator)
+            {
+                SendGenericNegativeMessageReply(command.Message, "Not for you", "Only users with the **Admin** permission may use the `autoprefix` command.");
+                return;
+            }
+            GuildDataHelper helper = GuildDataHelper.GetHelperFor(channel.Guild.Id);
+            lock (helper.Locker)
+            {
+                if (command.CleanedArguments.IsEmpty())
+                {
+                    SendGenericPositiveMessageReply(command.Message, $"Auto-Prefix", $"The current auto-prefix setting is:\n{helper.InternalData.AutoPrefix}"
+                        + "\n\nUse `@AutoThreadsBot autoprefix true` or `false`");
+                }
+                else if (command.CleanedArguments[0].ToLowerFast() == "true")
+                {
+                    helper.InternalData.AutoPrefix = true;
+                    SendGenericPositiveMessageReply(command.Message, $"Auto-Prefix", $"Auto-Prefix enabled.");
+                }
+                else if (command.CleanedArguments[0].ToLowerFast() == "false")
+                {
+                    helper.InternalData.AutoPrefix = false;
+                    SendGenericPositiveMessageReply(command.Message, $"Auto-Prefix", $"Auto-Prefix disabled.");
+                }
+                else
+                {
+                    SendGenericNegativeMessageReply(command.Message, $"Invalid Input", $"Can only be set to 'true' or 'false'.");
                 }
                 helper.Modified = true;
                 helper.Save();
