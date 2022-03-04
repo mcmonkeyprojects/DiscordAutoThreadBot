@@ -101,7 +101,7 @@ namespace DiscordAutoThreadBot
             if (Modified)
             {
                 FDSSection output = new();
-                output.Set("Users", InternalData.Users.Select(u => new FDSData(u)));
+                output.Set("Users", InternalData.Users.Select(u => new FDSData(u)).ToList());
                 output.Set("FirstMessage", InternalData.FirstMessage);
                 output.Set("AutoPrefix", InternalData.AutoPrefix);
                 FDSSection userData = new();
@@ -109,7 +109,7 @@ namespace DiscordAutoThreadBot
                 {
                     FDSSection subSection = new();
                     subSection.Set("IsWhitelist", data.IsWhitelist);
-                    subSection.Set("ChannelLimit", data.ChannelLimit.Select(u => new FDSData(u)));
+                    subSection.Set("ChannelLimit", data.ChannelLimit.Select(u => new FDSData(u)).ToList());
                     userData.Set(id.ToString(), subSection);
                 }
                 output.Set("UserData", userData);
