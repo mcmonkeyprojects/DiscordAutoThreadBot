@@ -9,6 +9,8 @@ The `(user)` can be either a user ID, or an `@ping` of the user.
 
 Whenever a thread is created, all users on the list get added to the thread.
 
+You can also use `@AutoThreadsBot user (user) whitelist/blacklist (channels)` to configure a specific user to be whitelisted or blacklisted to certain channels. Channels are referenced by ID or with a `#channel` tag. The list can be separated with spaces or commas.
+
 Users on the list can block the bot to be added to the thread without seeing the notification.
 
 There is a maximum of 15 users you can add to the list. This is because adding new users to a thread gets rate limited (4 users per second) so the more you have, the longer the bot has to freeze for each thread.

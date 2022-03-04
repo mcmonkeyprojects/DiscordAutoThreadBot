@@ -153,7 +153,10 @@ namespace DiscordAutoThreadBot
                     }
                     else
                     {
-                        tasks.Add(thread.AddUserAsync(user));
+                        if (!helper.InternalData.UserData.TryGetValue(userId, out GuildDataHelper.UserData data) || data.ChannelLimit.IsEmpty() || data.ChannelLimit.Contains(thread.ParentChannel.Id) == data.IsWhitelist)
+                        {
+                            tasks.Add(thread.AddUserAsync(user));
+                        }
                     }
                 }
                 foreach (Task task in tasks)

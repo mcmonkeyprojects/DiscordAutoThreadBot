@@ -55,6 +55,16 @@ namespace DiscordAutoThreadBot
             GuildLists.Clear();
         }
 
+        /// <summary>Helper class to store per-user data.</summary>
+        public class UserData : AutoConfiguration
+        {
+            /// <summary>True: whitelist, false: blacklist.</summary>
+            public bool IsWhitelist = false;
+
+            /// <summary>Channel limit to apply as either a whitelist or blacklist.</summary>
+            public HashSet<ulong> ChannelLimit = new();
+        }
+
         /// <summary>Helper class to store the data for this instance.</summary>
         public class Data : AutoConfiguration
         {
@@ -63,6 +73,9 @@ namespace DiscordAutoThreadBot
 
             /// <summary>If non-null: a message to post when new threads are created.</summary>
             public string FirstMessage = "";
+
+            /// <summary>A map of user IDs to their data.</summary>
+            public Dictionary<ulong, UserData> UserData = new();
         }
 
         public LockObject Locker = new();

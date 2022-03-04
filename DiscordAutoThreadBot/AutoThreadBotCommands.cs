@@ -21,6 +21,7 @@ namespace DiscordAutoThreadBot
             SendGenericPositiveMessageReply(command.Message, "Auto Thread Join Bot - Help", "The auto-thread join bot automatically levels adds specific users to any new threads created on the Discord."
                 + "\nThose with admin access on this Discord can type `@AutoThreadsBot add (user)` to add a user to the auto-threads-adder list,"
                 + "\nor type `@AutoThreadsBot remove (user)` to remove them from that list."
+                + "\nor type `@AutoThreadsBot user (user) whitelist/blacklist/clear (channels)` to configure a specific user to have a whitelist or a blacklist on specific channels (comma or space separated channel ID or tag list),"
                 + "\nAlso `@AutoThreadsBot list` to view the current user list."
                 + "\nIf you're on the list, you can block this bot to hide the notifications but still be added to threads."
                 + "\nAlso `@AutoThreadsBot firstmessage (text)` to configure a message that the bot will show when a new thread is created."
@@ -67,6 +68,90 @@ namespace DiscordAutoThreadBot
             }
         }
 
+        public static AsciiMatcher ChannelTagCleaner = new("<#> ");
+        public static AsciiMatcher ChannelIDListValidator = new(AsciiMatcher.Digits + ",");
+
+        /// <summary>A command for admins to configure a user in the list.</summary>
+        public static void Command_User(CommandData command)
+        {
+            if (command.Message is not SocketUserMessage message || message.Channel is not SocketGuildChannel channel)
+            {
+                return;
+            }
+            if (!(message.Author as SocketGuildUser).GuildPermissions.Administrator)
+            {
+                SendGenericNegativeMessageReply(command.Message, "Not for you", "Only users with the **Admin** permission may use the `user` command.");
+                return;
+            }
+            if (command.RawArguments.Length < 2 || !ulong.TryParse(PingIgnorableCharacters.TrimToNonMatches(command.RawArguments[0]), out ulong userId))
+            {
+                SendGenericNegativeMessageReply(command.Message, "Invalid Input", "Give a user ID or @ mention as the first argument, then 'blacklist', 'whitelist', or 'clear'. If not clearing, follow that with a channel list (IDs or tags, comma or space separated).");
+                return;
+            }
+            if (command.Bot.Client.GetUser(userId) is null)
+            {
+                SendGenericNegativeMessageReply(command.Message, "Invalid Input", "That user doesn't seem to exist.");
+                return;
+            }
+            GuildDataHelper helper = GuildDataHelper.GetHelperFor(channel.Guild.Id);
+            lock (helper.Locker)
+            {
+                if (!helper.InternalData.Users.Contains(userId))
+                {
+                    SendGenericNegativeMessageReply(command.Message, "Invalid Input", "That user isn't listed. You must add them first.");
+                    return;
+                }
+                string cmdType = command.RawArguments[1].ToLowerFast();
+                if (cmdType == "clear")
+                {
+                    if (helper.InternalData.UserData.Remove(userId))
+                    {
+                        helper.Modified = true;
+                        helper.Save();
+                        SendGenericPositiveMessageReply(command.Message, "Cleared", $"Cleared user data for <@{userId}>.");
+                    }
+                    else
+                    {
+                        SendGenericNegativeMessageReply(command.Message, "Cannot Clear", $"No user data exists for <@{userId}>.");
+                    }
+                    return;
+                }
+                GuildDataHelper.UserData newData = new();
+                if (cmdType == "whitelist")
+                {
+                    newData.IsWhitelist = true;
+                }
+                else if (cmdType == "blacklist")
+                {
+                    newData.IsWhitelist = false;
+                }
+                else
+                {
+                    SendGenericNegativeMessageReply(command.Message, "Invalid Input", "Unknown action type. Must be 'clear', 'whitelist', or 'blacklist'.");
+                    return;
+                }
+                string channelTargets = ChannelTagCleaner.TrimToNonMatches(string.Join(',', command.RawArguments.Skip(2)));
+                if (!ChannelIDListValidator.IsOnlyMatches(channelTargets))
+                {
+                    SendGenericNegativeMessageReply(command.Message, "Invalid Input", "Channel list contains invalid input.");
+                    return;
+                }
+                newData.ChannelLimit = channelTargets.SplitFast(',').Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => ulong.TryParse(s, out ulong val) ? val : 0).ToHashSet();
+                foreach (ulong channelId in newData.ChannelLimit)
+                {
+                    if (channelId == 0 || channel.Guild.GetChannel(channelId) is null)
+                    {
+                        SendGenericNegativeMessageReply(command.Message, "Invalid Input", $"Channel ID given {channelId} is not a channel that exists.");
+                        return;
+                    }
+                }
+                helper.InternalData.UserData[userId] = newData;
+                helper.Modified = true;
+                helper.Save();
+                SendGenericPositiveMessageReply(command.Message, "Configured", $"User <@{userId}> is now {(newData.IsWhitelist ? "whitelisted" : "blacklisted")} to channels: {string.Join(", ", newData.ChannelLimit.Select(ch => $"<#{ch}>"))}");
+            }
+        }
+
         /// <summary>A command for admins to remove a user from the list.</summary>
         public static void Command_Remove(CommandData command)
         {
@@ -93,6 +178,7 @@ namespace DiscordAutoThreadBot
                     return;
                 }
                 helper.InternalData.Users.Remove(userId);
+                helper.InternalData.UserData.Remove(userId);
                 helper.Modified = true;
                 helper.Save();
                 SendGenericPositiveMessageReply(command.Message, "Removed", $"Removed user <@{userId}> from the auto-thread-join list.");
