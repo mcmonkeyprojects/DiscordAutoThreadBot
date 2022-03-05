@@ -56,7 +56,7 @@ namespace DiscordAutoThreadBot
         }
 
         /// <summary>Helper class to store per-user data.</summary>
-        public class UserData
+        public class UserData : AutoConfiguration
         {
             /// <summary>True: whitelist, false: blacklist.</summary>
             public bool IsWhitelist = false;
@@ -66,7 +66,7 @@ namespace DiscordAutoThreadBot
         }
 
         /// <summary>Helper class to store the data for this instance.</summary>
-        public class Data
+        public class Data : AutoConfiguration
         {
             /// <summary>A list of relevant user IDs.</summary>
             public List<ulong> Users = new();
@@ -100,20 +100,7 @@ namespace DiscordAutoThreadBot
         {
             if (Modified)
             {
-                FDSSection output = new();
-                output.Set("Users", InternalData.Users.Select(u => new FDSData(u)).ToList());
-                output.Set("FirstMessage", InternalData.FirstMessage);
-                output.Set("AutoPrefix", InternalData.AutoPrefix);
-                FDSSection userData = new();
-                foreach ((ulong id, UserData data) in InternalData.UserData)
-                {
-                    FDSSection subSection = new();
-                    subSection.Set("IsWhitelist", data.IsWhitelist);
-                    subSection.Set("ChannelLimit", data.ChannelLimit.Select(u => new FDSData(u)).ToList());
-                    userData.Set(id.ToString(), subSection);
-                }
-                output.Set("UserData", userData);
-                output.SaveToFile(FilePath);
+                InternalData.Save(true).SaveToFile(FilePath);
                 Modified = false;
             }
         }
@@ -123,22 +110,7 @@ namespace DiscordAutoThreadBot
         {
             try
             {
-                FDSSection section = FDSUtility.ReadFile(FilePath);
-                InternalData.Users = section.GetDataList("Users").Select(u => u.AsULong.Value).ToList();
-                InternalData.FirstMessage = section.GetString("FirstMessage", InternalData.FirstMessage);
-                InternalData.AutoPrefix = section.GetBool("AutoPrefix", InternalData.AutoPrefix).Value;
-                FDSSection userData = section.GetSection("UserData");
-                if (userData is not null)
-                {
-                    foreach (string key in userData.GetRootKeys())
-                    {
-                        FDSSection userSection = userData.GetSection(key);
-                        UserData data = new();
-                        data.IsWhitelist = userSection.GetBool("IsWhitelist", data.IsWhitelist).Value;
-                        data.ChannelLimit = userSection.GetDataList("ChannelLimit").Select(u => u.AsULong.Value).ToHashSet();
-                        InternalData.UserData.Add(ulong.Parse(key), data);
-                    }
-                }
+                InternalData.Load(FDSUtility.ReadFile(FilePath));
             }
             catch (FileNotFoundException)
             {
