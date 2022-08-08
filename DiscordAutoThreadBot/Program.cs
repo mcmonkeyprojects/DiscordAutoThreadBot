@@ -132,7 +132,7 @@ namespace DiscordAutoThreadBot
 
         public static Task NewMessageHandle(SocketMessage message)
         {
-            if (MessageSpecialHandlers.TryRemove(message.Channel.Id, out Action<SocketMessage> handler))
+            if (!message.Author.IsBot && MessageSpecialHandlers.TryRemove(message.Channel.Id, out Action<SocketMessage> handler))
             {
                 handler(message);
             }
@@ -174,7 +174,7 @@ namespace DiscordAutoThreadBot
                     {
                         if (firstMessage is null)
                         {
-                            if (tries++ > 10)
+                            if (tries++ > 30)
                             {
                                 break;
                             }
