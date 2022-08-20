@@ -132,9 +132,22 @@ namespace DiscordAutoThreadBot
 
         public static Task NewMessageHandle(SocketMessage message)
         {
-            if (!message.Author.IsBot && MessageSpecialHandlers.TryRemove(message.Channel.Id, out Action<SocketMessage> handler))
+            if (!MessageSpecialHandlers.ContainsKey(message.Channel.Id))
             {
+                // Ignore
+            }
+            else if (message.Author.IsBot || message.Author.IsWebhook)
+            {
+                Console.WriteLine($"Thread {message.Channel.Id} has a handler that cannot be used because '" + message.Author.Username + "' is a bot.");
+            }
+            else if (MessageSpecialHandlers.TryRemove(message.Channel.Id, out Action<SocketMessage> handler))
+            {
+                Console.WriteLine($"Thread {message.Channel.Id} found a valid first messager: '" + message.Author.Username + "'");
                 handler(message);
+            }
+            else
+            {
+                Console.WriteLine($"Thread {message.Channel.Id} found a valid messager but it's been handled async already.");
             }
             return Task.CompletedTask;
         }
@@ -174,7 +187,7 @@ namespace DiscordAutoThreadBot
                     {
                         if (firstMessage is null)
                         {
-                            if (tries++ > 30)
+                            if (tries++ > 70) // 70 x100ms = 5 seconds
                             {
                                 break;
                             }
@@ -201,7 +214,12 @@ namespace DiscordAutoThreadBot
                             {
                                 senderName = senderName[0..10];
                             }
-                            tasks.Add(thread.ModifyAsync(t => t.Name = $"({senderName}) {thread.Name}"));
+                            string name = $"({senderName}) {thread.Name}";
+                            if (name.Length > 98)
+                            {
+                                name = name[0..98];
+                            }
+                            tasks.Add(thread.ModifyAsync(t => t.Name = name ));
                         }
                     }
                 }
