@@ -26,6 +26,7 @@ namespace DiscordAutoThreadBot
                 + "\nIf you're on the list, you can block this bot to hide the notifications but still be added to threads."
                 + "\nAlso `@AutoThreadsBot firstmessage (text)` to configure a message that the bot will show when a new thread is created."
                 + "\nAlso, `@AutoThreadsBot autoprefix true` to enable (or `false` to disable) automatic username thread prefixes."
+                + "\nAlso, anybody who has the `Manage Threads` permission (or that own a thread) may use `/archive` or `@AutoThreadsBot archive` to archive a thread without locking it."
                 + "\n\nI'm [open source](https://github.com/mcmonkeyprojects/DiscordAutoThreadBot)!");
         }
 
@@ -277,6 +278,38 @@ namespace DiscordAutoThreadBot
                 helper.Modified = true;
                 helper.Save();
             }
+        }
+
+        /// <summary>A command for staff to archive a thread without locking it.</summary>
+        public static void Command_Archive(CommandData command)
+        {
+            if (command.Message is not SocketUserMessage message || message.Channel is not SocketThreadChannel channel)
+            {
+                return;
+            }
+            if (!(message.Author as SocketGuildUser).GuildPermissions.ManageThreads && message.Author.Id != channel.Owner?.Id)
+            {
+                SendGenericNegativeMessageReply(command.Message, "Not for you", "Only users with the **Manage Threads** permission may use the `archive` command.");
+                return;
+            }
+            channel.ModifyAsync(c => { c.Locked = false; c.Archived = true; }).Wait();
+        }
+
+        /// <summary>A slash command for staff to archive a thread without locking it.</summary>
+        public static void SlashCommand_Archive(SocketSlashCommand command)
+        {
+            if (command.Channel is not SocketThreadChannel channel)
+            {
+                command.RespondAsync("This is only available in threads.", ephemeral: true).Wait();
+                return;
+            }
+            if (!(command.User as SocketGuildUser).GuildPermissions.ManageThreads && command.User.Id != channel.Owner?.Id)
+            {
+                SendGenericNegativeMessageReply(command, "Not for you", "Only users with the **Manage Threads** permission (or that own the thread) may use the `archive` command.");
+                return;
+            }
+            SendGenericPositiveMessageReply(command, "Thread Archived", $"Thread moving into archive on request of <@{command.User.Id}>.");
+            channel.ModifyAsync(c => { c.Locked = false; c.Archived = true; }).Wait();
         }
     }
 }

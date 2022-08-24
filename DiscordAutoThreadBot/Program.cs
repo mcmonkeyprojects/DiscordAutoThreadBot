@@ -59,6 +59,8 @@ namespace DiscordAutoThreadBot
             bot.RegisterCommand(AutoThreadBotCommands.Command_User, "user");
             bot.RegisterCommand(AutoThreadBotCommands.Command_FirstMessage, "firstmessage");
             bot.RegisterCommand(AutoThreadBotCommands.Command_AutoPrefix, "autoprefix");
+            bot.RegisterCommand(AutoThreadBotCommands.Command_Archive, "archive");
+            bot.RegisterSlashCommand(AutoThreadBotCommands.SlashCommand_Archive, "archive");
             bot.Client.ThreadCreated += (thread) => NewThreadHandle(bot, thread);
             bot.Client.MessageReceived += (message) => NewMessageHandle(message);
             bot.Client.Ready += () =>
@@ -83,7 +85,7 @@ namespace DiscordAutoThreadBot
                 try
                 {
                     const string commandVersionFile = "./config/command_registered_version.dat";
-                    const int commandVersion = 2;
+                    const int commandVersion = 3;
                     if (!File.Exists(commandVersionFile) || !int.TryParse(commandVersionFile, out int registered) || registered < commandVersion)
                     {
                         RegisterSlashCommands(bot);
@@ -117,12 +119,8 @@ namespace DiscordAutoThreadBot
 
         public static void RegisterSlashCommands(DiscordBot bot)
         {
-            // Clear out historical slash commands
-            SocketApplicationCommand cmd = bot.Client.GetGlobalApplicationCommandsAsync().Result.FirstOrDefault(cmd => cmd.Name == "archive");
-            if (cmd is not null)
-            {
-                cmd.DeleteAsync().Wait();
-            }
+            SlashCommandBuilder archiveCommand = new SlashCommandBuilder().WithName("archive").WithDescription("Moves the current thread into archive without locking it. Requires 'Manage Threads' permission.");
+            bot.Client.BulkOverwriteGlobalApplicationCommandsAsync(new ApplicationCommandProperties[] { archiveCommand.Build() });
         }
 
         /// <summary>Temporary (in-RAM) list of seen threads, to avoid duplication.</summary>
