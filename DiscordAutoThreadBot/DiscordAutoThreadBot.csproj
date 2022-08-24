@@ -11,11 +11,8 @@
   <ItemGroup>
     <Compile Remove="mcmonkeyDiscordBotBase\*.*" />
     <Compile Remove="mcmonkeyDiscordBotBase\**\*.*" />
-    <Compile Remove="FreneticUtilities\*.*" />
-    <Compile Remove="FreneticUtilities\**\*.*" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(SolutionDir)\mcmonkeyDiscordBotBase\mcmonkeyDiscordBotBase.csproj" />
-    <ProjectReference Include="$(SolutionDir)\FreneticUtilities\FreneticUtilities\FreneticUtilities.csproj" />
   </ItemGroup>
 </Project>
