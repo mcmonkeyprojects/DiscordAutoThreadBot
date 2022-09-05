@@ -23,7 +23,7 @@ You can also configure `@AutoThreadsBot firstmessage (text)` to set a message th
 
 The bot can also apply username-prefixing if wanted, via `@AutoThreadsBot autoprefix true`. This is a feature we use on the Denizen discord to more readily distinguish threads. It applies the format `(Username) titlehere`, so for example if `mcmonkey` creates a thread `I need help`, it becomes `(mcmonkey) I need help`. This will disable if the thread title already has a prefix.
 
-Anybody who has the `Manage Threads` permission (or who owns a thread) can use `/archive` while in a thread to archive that thread without locking it. This also is available as a `@AutoThreadsBot archive` command.
+Anybody who has the `Manage Threads` permission (or who owns a thread) can use `/archive` while in a thread to archive that thread without locking it. This also is available as a `@AutoThreadsBot archive` command. This is left in ThreadBot because Discord's developers have casually deleted the GUI button that does this natively in Discord with no explanation on two separate occasions, leaving us unable to archive threads for several days both times.
 
 ### Want To Add The Public Instance?
 
