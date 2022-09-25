@@ -174,10 +174,6 @@ namespace DiscordAutoThreadBot
             {
                 Console.WriteLine($"Load thread {thread.Id}");
                 List<Task> tasks = new();
-                if (!string.IsNullOrWhiteSpace(helper.InternalData.FirstMessage))
-                {
-                    thread.SendMessageAsync(text: helper.InternalData.FirstMessage).Wait();
-                }
                 if (helper.InternalData.AutoPrefix && !thread.Name.StartsWithFast('(') && !thread.Name.StartsWithFast('['))
                 {
                     string senderName = null;
@@ -236,6 +232,10 @@ namespace DiscordAutoThreadBot
                         }
                     }
                 }
+                if (!string.IsNullOrWhiteSpace(helper.InternalData.FirstMessage))
+                {
+                    thread.SendMessageAsync(text: helper.InternalData.FirstMessage).Wait();
+                }
                 foreach (ulong userId in helper.InternalData.Users.ToArray()) // ToArray to allow 'Remove' call
                 {
                     SocketGuildUser user = thread.Guild.GetUser(userId);
@@ -250,7 +250,10 @@ namespace DiscordAutoThreadBot
                     {
                         if (!helper.InternalData.UserData.TryGetValue(userId, out GuildDataHelper.UserData data) || data.ChannelLimit.IsEmpty() || data.ChannelLimit.Contains(thread.ParentChannel.Id) == data.IsWhitelist)
                         {
-                            tasks.Add(thread.AddUserAsync(user));
+                            if (!thread.Users.Any(u => u.Id == user.Id))
+                            {
+                                tasks.Add(thread.AddUserAsync(user));
+                            }
                         }
                     }
                 }
