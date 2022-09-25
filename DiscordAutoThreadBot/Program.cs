@@ -236,9 +236,7 @@ namespace DiscordAutoThreadBot
                             {
                                 name = name[0..98];
                             }
-                            Task modify = thread.ModifyAsync(t => t.Name = name);
-                            modify.Start();
-                            tasks.Add(modify);
+                            tasks.Add(thread.ModifyAsync(t => t.Name = name));
                         }
                     }
                 }
