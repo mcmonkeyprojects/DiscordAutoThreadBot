@@ -165,6 +165,8 @@ namespace DiscordAutoThreadBot
             return Task.CompletedTask;
         }
 
+        public static AsciiMatcher ACCEPTABLE_NAME_CHARs = new(AsciiMatcher.BothCaseLetters + AsciiMatcher.Digits + "_");
+
         public static void HandleNewThread_Internal(DiscordBot bot, SocketThreadChannel thread)
         {
             GuildDataHelper helper = GuildDataHelper.GetHelperFor(thread.Guild.Id);
@@ -173,9 +175,7 @@ namespace DiscordAutoThreadBot
                 List<Task> tasks = new();
                 if (!string.IsNullOrWhiteSpace(helper.InternalData.FirstMessage))
                 {
-                    Task send = thread.SendMessageAsync(text: helper.InternalData.FirstMessage);
-                    send.Start();
-                    tasks.Add(send);
+                    thread.SendMessageAsync(text: helper.InternalData.FirstMessage).Wait();
                 }
                 foreach (ulong userId in helper.InternalData.Users.ToArray()) // ToArray to allow 'Remove' call
                 {
@@ -234,6 +234,12 @@ namespace DiscordAutoThreadBot
                         if (user is not null)
                         {
                             senderName = user.Nickname ?? user.Username;
+                            int nonMatch = ACCEPTABLE_NAME_CHARs.FirstNonMatchingIndex(senderName);
+                            if (nonMatch > 5)
+                            {
+                                senderName = senderName[0..nonMatch];
+                            }
+                            senderName = ACCEPTABLE_NAME_CHARs.TrimToMatches(senderName);
                             if (senderName.Length > 12)
                             {
                                 senderName = senderName[0..10];
