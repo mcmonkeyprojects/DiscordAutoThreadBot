@@ -161,7 +161,17 @@ namespace DiscordAutoThreadBot
             {
                 return Task.CompletedTask;
             }
-            Task.Factory.StartNew(() => HandleNewThread_Internal(bot, thread));
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    HandleNewThread_Internal(bot, thread);
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Failed to handle a thread: {ex}");
+                }
+            });
             return Task.CompletedTask;
         }
 
