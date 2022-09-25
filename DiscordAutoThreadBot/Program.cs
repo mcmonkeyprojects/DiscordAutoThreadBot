@@ -172,30 +172,11 @@ namespace DiscordAutoThreadBot
             GuildDataHelper helper = GuildDataHelper.GetHelperFor(thread.Guild.Id);
             lock (helper.Locker)
             {
+                Console.WriteLine($"Load thread {thread.Id}");
                 List<Task> tasks = new();
                 if (!string.IsNullOrWhiteSpace(helper.InternalData.FirstMessage))
                 {
                     thread.SendMessageAsync(text: helper.InternalData.FirstMessage).Wait();
-                }
-                foreach (ulong userId in helper.InternalData.Users.ToArray()) // ToArray to allow 'Remove' call
-                {
-                    SocketGuildUser user = thread.Guild.GetUser(userId);
-                    if (user is null)
-                    {
-                        Console.WriteLine($"Failed to add thread user {user.Id}");
-                        thread.SendMessageAsync(embed: new EmbedBuilder().WithTitle("Error").WithDescription($"Failed to add user {user.Id} - did they leave the Discord?").Build()).Wait();
-                        helper.InternalData.Users.Remove(userId);
-                        helper.Modified = true;
-                    }
-                    else
-                    {
-                        if (!helper.InternalData.UserData.TryGetValue(userId, out GuildDataHelper.UserData data) || data.ChannelLimit.IsEmpty() || data.ChannelLimit.Contains(thread.ParentChannel.Id) == data.IsWhitelist)
-                        {
-                            Task add = thread.AddUserAsync(user);
-                            add.Start();
-                            tasks.Add(add);
-                        }
-                    }
                 }
                 if (helper.InternalData.AutoPrefix && !thread.Name.StartsWithFast('(') && !thread.Name.StartsWithFast('['))
                 {
@@ -255,10 +236,30 @@ namespace DiscordAutoThreadBot
                         }
                     }
                 }
+                foreach (ulong userId in helper.InternalData.Users.ToArray()) // ToArray to allow 'Remove' call
+                {
+                    SocketGuildUser user = thread.Guild.GetUser(userId);
+                    if (user is null)
+                    {
+                        Console.WriteLine($"Failed to add thread user {user.Id}");
+                        thread.SendMessageAsync(embed: new EmbedBuilder().WithTitle("Error").WithDescription($"Failed to add user {user.Id} - did they leave the Discord?").Build()).Wait();
+                        helper.InternalData.Users.Remove(userId);
+                        helper.Modified = true;
+                    }
+                    else
+                    {
+                        if (!helper.InternalData.UserData.TryGetValue(userId, out GuildDataHelper.UserData data) || data.ChannelLimit.IsEmpty() || data.ChannelLimit.Contains(thread.ParentChannel.Id) == data.IsWhitelist)
+                        {
+                            tasks.Add(thread.AddUserAsync(user));
+                        }
+                    }
+                }
+                Console.WriteLine($"Wait on thread {thread.Id}");
                 foreach (Task task in tasks)
                 {
                     task.Wait();
                 }
+                Console.WriteLine($"Completed thread {thread.Id}");
             }
         }
 
