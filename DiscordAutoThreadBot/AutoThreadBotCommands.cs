@@ -87,7 +87,8 @@ namespace DiscordAutoThreadBot
             }
             if (command.RawArguments.Length < 2 || !ulong.TryParse(PingIgnorableCharacters.TrimToNonMatches(command.RawArguments[0]), out ulong userId))
             {
-                SendGenericNegativeMessageReply(command.Message, "Invalid Input", "Give a user ID or @ mention as the first argument, then 'blacklist', 'whitelist', or 'clear'. If not clearing, follow that with a channel list (IDs or tags, comma or space separated).");
+                SendGenericNegativeMessageReply(command.Message, "Invalid Input", "Give a user ID or @ mention as the first argument, then `blacklist`, `whitelist`, or `clear`. If not clearing, follow that with a channel list (IDs or tags, comma or space separated)."
+                    + "\nOr, user ID + `forumexclude` then `true` or `false`.");
                 return;
             }
             if (command.Bot.Client.GetUser(userId) is null)
@@ -118,39 +119,62 @@ namespace DiscordAutoThreadBot
                     }
                     return;
                 }
-                GuildDataHelper.UserData newData = new();
+                GuildDataHelper.UserData newData = helper.InternalData.UserData.GetOrCreate(userId, () => new GuildDataHelper.UserData());
+                void buildChannels()
+                {
+                    string channelTargets = ChannelTagCleaner.TrimToNonMatches(string.Join(',', command.RawArguments.Skip(2)));
+                    if (!ChannelIDListValidator.IsOnlyMatches(channelTargets))
+                    {
+                        SendGenericNegativeMessageReply(command.Message, "Invalid Input", "Channel list contains invalid input.");
+                        return;
+                    }
+                    newData.ChannelLimit = channelTargets.SplitFast(',').Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => ulong.TryParse(s, out ulong val) ? val : 0).ToHashSet();
+                    foreach (ulong channelId in newData.ChannelLimit)
+                    {
+                        if (channelId == 0 || channel.Guild.GetChannel(channelId) is null)
+                        {
+                            SendGenericNegativeMessageReply(command.Message, "Invalid Input", $"Channel ID given {channelId} is not a channel that exists.");
+                            return;
+                        }
+                    }
+                    SendGenericPositiveMessageReply(command.Message, "Configured", $"User <@{userId}> is now {(newData.IsWhitelist ? "whitelisted" : "blacklisted")} to channels: {string.Join(", ", newData.ChannelLimit.Select(ch => $"<#{ch}>"))}");
+                }
                 if (cmdType == "whitelist")
                 {
                     newData.IsWhitelist = true;
+                    buildChannels();
                 }
                 else if (cmdType == "blacklist")
                 {
                     newData.IsWhitelist = false;
+                    buildChannels();
+                }
+                else if (cmdType == "forumexclude")
+                {
+                    string mode = command.RawArguments.Length > 2 ? command.RawArguments[2].ToLowerFast() : "";
+                    if (mode == "true")
+                    {
+                        newData.ForumExclude = true;
+                    }
+                    else if (mode == "false")
+                    {
+                        newData.ForumExclude = false;
+                    }
+                    else
+                    {
+                        SendGenericNegativeMessageReply(command.Message, "Invalid Input", "Unknown `forumexclude` boolean: must be `true` or `false`.");
+                        return;
+                    }
+                    SendGenericPositiveMessageReply(command.Message, "Configured", $"User <@{userId}> is now {(newData.ForumExclude ? "excluded from" : "included in")} forum channels.");
                 }
                 else
                 {
-                    SendGenericNegativeMessageReply(command.Message, "Invalid Input", "Unknown action type. Must be 'clear', 'whitelist', or 'blacklist'.");
+                    SendGenericNegativeMessageReply(command.Message, "Invalid Input", "Unknown action type. Must be `clear`, `whitelist`, `blacklist`, or `forumexclude`.");
                     return;
-                }
-                string channelTargets = ChannelTagCleaner.TrimToNonMatches(string.Join(',', command.RawArguments.Skip(2)));
-                if (!ChannelIDListValidator.IsOnlyMatches(channelTargets))
-                {
-                    SendGenericNegativeMessageReply(command.Message, "Invalid Input", "Channel list contains invalid input.");
-                    return;
-                }
-                newData.ChannelLimit = channelTargets.SplitFast(',').Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => ulong.TryParse(s, out ulong val) ? val : 0).ToHashSet();
-                foreach (ulong channelId in newData.ChannelLimit)
-                {
-                    if (channelId == 0 || channel.Guild.GetChannel(channelId) is null)
-                    {
-                        SendGenericNegativeMessageReply(command.Message, "Invalid Input", $"Channel ID given {channelId} is not a channel that exists.");
-                        return;
-                    }
                 }
                 helper.InternalData.UserData[userId] = newData;
                 helper.Modified = true;
                 helper.Save();
-                SendGenericPositiveMessageReply(command.Message, "Configured", $"User <@{userId}> is now {(newData.IsWhitelist ? "whitelisted" : "blacklisted")} to channels: {string.Join(", ", newData.ChannelLimit.Select(ch => $"<#{ch}>"))}");
             }
         }
 

@@ -165,7 +165,7 @@ namespace DiscordAutoThreadBot
             {
                 try
                 {
-                    HandleNewThread_Internal(bot, thread);
+                    HandleNewThread_Internal(thread);
                 }
                 catch (Exception ex)
                 {
@@ -177,7 +177,7 @@ namespace DiscordAutoThreadBot
 
         public static AsciiMatcher ACCEPTABLE_NAME_CHARs = new(AsciiMatcher.BothCaseLetters + AsciiMatcher.Digits + "_");
 
-        public static void HandleNewThread_Internal(DiscordBot bot, SocketThreadChannel thread)
+        public static void HandleNewThread_Internal(SocketThreadChannel thread)
         {
             GuildDataHelper helper = GuildDataHelper.GetHelperFor(thread.Guild.Id);
             lock (helper.Locker)
@@ -256,7 +256,7 @@ namespace DiscordAutoThreadBot
                     }
                     else
                     {
-                        if (!helper.InternalData.UserData.TryGetValue(userId, out GuildDataHelper.UserData data) || data.ChannelLimit.IsEmpty() || data.ChannelLimit.Contains(thread.ParentChannel.Id) == data.IsWhitelist)
+                        if (!helper.InternalData.UserData.TryGetValue(userId, out GuildDataHelper.UserData data) || ShouldInclude(data, thread))
                         {
                             if (!thread.Users.Any(u => u.Id == user.Id))
                             {
@@ -272,6 +272,22 @@ namespace DiscordAutoThreadBot
                 }
                 Console.WriteLine($"Completed thread {thread.Id}");
             }
+        }
+
+        public static bool ShouldInclude(GuildDataHelper.UserData data, SocketThreadChannel thread)
+        {
+            if (!data.ChannelLimit.IsEmpty())
+            {
+                if (data.ChannelLimit.Contains(thread.ParentChannel.Id) != data.IsWhitelist)
+                {
+                    return false;
+                }
+            }
+            if (data.ForumExclude && thread.ParentChannel is IForumChannel)
+            {
+                return false;
+            }
+            return true;
         }
 
         public static async void ConsoleLoop()

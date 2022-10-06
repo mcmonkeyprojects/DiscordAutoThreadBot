@@ -63,6 +63,9 @@ namespace DiscordAutoThreadBot
 
             /// <summary>Channel limit to apply as either a whitelist or blacklist.</summary>
             public HashSet<ulong> ChannelLimit = new();
+
+            /// <summary>Whether to exclude this user from forum channels.</summary>
+            public bool ForumExclude = false;
         }
 
         /// <summary>Helper class to store the data for this instance.</summary>
