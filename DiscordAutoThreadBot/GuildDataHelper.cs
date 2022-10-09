@@ -80,6 +80,9 @@ namespace DiscordAutoThreadBot
             /// <summary>If true: automatically apply username prefixes to threads.</summary>
             public bool AutoPrefix = false;
 
+            /// <summary>If true: automatically pin the first message in a thread.</summary>
+            public bool AutoPin = false;
+
             /// <summary>A map of user IDs to their data.</summary>
             public Dictionary<ulong, UserData> UserData = new();
         }

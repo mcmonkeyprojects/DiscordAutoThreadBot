@@ -304,6 +304,45 @@ namespace DiscordAutoThreadBot
             }
         }
 
+        /// <summary>A command for admins to enable the autopin tool.</summary>
+        public static void Command_AutoPin(CommandData command)
+        {
+            if (command.Message is not SocketUserMessage message || message.Channel is not SocketGuildChannel channel)
+            {
+                return;
+            }
+            if (!(message.Author as SocketGuildUser).GuildPermissions.Administrator)
+            {
+                SendGenericNegativeMessageReply(command.Message, "Not for you", "Only users with the **Admin** permission may use the `autopin` command.");
+                return;
+            }
+            GuildDataHelper helper = GuildDataHelper.GetHelperFor(channel.Guild.Id);
+            lock (helper.Locker)
+            {
+                if (command.CleanedArguments.IsEmpty())
+                {
+                    SendGenericPositiveMessageReply(command.Message, $"AutoPin", $"The current autopin setting is:\n{helper.InternalData.AutoPin}"
+                        + "\n\nUse `@AutoThreadsBot autopin true` or `false`");
+                }
+                else if (command.CleanedArguments[0].ToLowerFast() == "true")
+                {
+                    helper.InternalData.AutoPin = true;
+                    SendGenericPositiveMessageReply(command.Message, $"AutoPin", $"AutoPin enabled.");
+                }
+                else if (command.CleanedArguments[0].ToLowerFast() == "false")
+                {
+                    helper.InternalData.AutoPin = false;
+                    SendGenericPositiveMessageReply(command.Message, $"AutoPin", $"AutoPin disabled.");
+                }
+                else
+                {
+                    SendGenericNegativeMessageReply(command.Message, $"Invalid Input", $"Can only be set to 'true' or 'false'.");
+                }
+                helper.Modified = true;
+                helper.Save();
+            }
+        }
+
         /// <summary>A command for staff to archive a thread without locking it.</summary>
         public static void Command_Archive(CommandData command)
         {

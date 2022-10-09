@@ -59,6 +59,7 @@ namespace DiscordAutoThreadBot
             bot.RegisterCommand(AutoThreadBotCommands.Command_User, "user");
             bot.RegisterCommand(AutoThreadBotCommands.Command_FirstMessage, "firstmessage");
             bot.RegisterCommand(AutoThreadBotCommands.Command_AutoPrefix, "autoprefix");
+            bot.RegisterCommand(AutoThreadBotCommands.Command_AutoPin, "autopin");
             bot.RegisterCommand(AutoThreadBotCommands.Command_Archive, "archive");
             bot.RegisterSlashCommand(AutoThreadBotCommands.SlashCommand_Archive, "archive");
             bot.Client.ThreadCreated += (thread) => NewThreadHandle(bot, thread);
@@ -161,6 +162,10 @@ namespace DiscordAutoThreadBot
             {
                 return Task.CompletedTask;
             }
+            if (Math.Abs(DateTimeOffset.Now.Subtract(thread.CreatedAt).TotalMinutes) > 5)
+            {
+                return Task.CompletedTask;
+            }
             Task.Factory.StartNew(() =>
             {
                 try
@@ -238,6 +243,10 @@ namespace DiscordAutoThreadBot
                             }
                             tasks.Add(thread.ModifyAsync(t => t.Name = name));
                         }
+                    }
+                    if (helper.InternalData.AutoPin && firstMessage is SocketUserMessage umessage)
+                    {
+                        tasks.Add(umessage.PinAsync());
                     }
                 }
                 if (!string.IsNullOrWhiteSpace(helper.InternalData.FirstMessage))
