@@ -189,65 +189,62 @@ namespace DiscordAutoThreadBot
             {
                 Console.WriteLine($"Load thread {thread.Id}");
                 List<Task> tasks = new();
-                if (helper.InternalData.AutoPrefix && !thread.Name.StartsWithFast('(') && !thread.Name.StartsWithFast('['))
+                string senderName = null;
+                int tries = 0;
+                long time = Environment.TickCount64;
+                SocketMessage firstMessage = null;
+                MessageSpecialHandlers[thread.Id] = (m) =>
                 {
-                    string senderName = null;
-                    int tries = 0;
-                    long time = Environment.TickCount64;
-                    SocketMessage firstMessage = null;
-                    MessageSpecialHandlers[thread.Id] = (m) =>
+                    firstMessage = m;
+                };
+                while (true)
+                {
+                    if (firstMessage is null)
                     {
-                        firstMessage = m;
-                    };
-                    while (true)
-                    {
-                        if (firstMessage is null)
-                        {
-                            if (tries++ > 70) // 70 x100ms = 5 seconds
-                            {
-                                break;
-                            }
-                            Task.Delay(100).Wait();
-                        }
-                        else
+                        if (tries++ > 70) // 70 x100ms = 5 seconds
                         {
                             break;
                         }
+                        Task.Delay(100).Wait();
                     }
-                    MessageSpecialHandlers.Remove(thread.Id, out _);
-                    if (firstMessage is null)
+                    else
                     {
-                        Console.WriteLine($"Failed to identify thread creator for thread {thread.Id}, wait {Environment.TickCount64 - time} ms.");
+                        break;
                     }
-                    else if (!thread.Name.StartsWithFast('(') && !thread.Name.StartsWithFast('[')) // reverify in case it changed
+                }
+                MessageSpecialHandlers.Remove(thread.Id, out _);
+                if (firstMessage is null)
+                {
+                    Console.WriteLine($"Failed to identify thread creator for thread {thread.Id}, wait {Environment.TickCount64 - time} ms.");
+                }
+                else if (helper.InternalData.AutoPrefix && !thread.Name.StartsWithFast('(') && !thread.Name.StartsWithFast('['))
+                {
+                    Console.WriteLine($"Apply name correction to thread {thread.Id}");
+                    IGuildUser user = firstMessage.Author as IGuildUser;
+                    if (user is not null)
                     {
-                        Console.WriteLine($"Apply name correction to thread {thread.Id}");
-                        IGuildUser user = firstMessage.Author as IGuildUser;
-                        if (user is not null)
+                        senderName = user.Nickname ?? user.Username;
+                        int nonMatch = ACCEPTABLE_NAME_CHARs.FirstNonMatchingIndex(senderName);
+                        if (nonMatch > 5)
                         {
-                            senderName = user.Nickname ?? user.Username;
-                            int nonMatch = ACCEPTABLE_NAME_CHARs.FirstNonMatchingIndex(senderName);
-                            if (nonMatch > 5)
-                            {
-                                senderName = senderName[0..nonMatch];
-                            }
-                            senderName = ACCEPTABLE_NAME_CHARs.TrimToMatches(senderName);
-                            if (senderName.Length > 12)
-                            {
-                                senderName = senderName[0..10];
-                            }
-                            string name = $"({senderName}) {thread.Name}";
-                            if (name.Length > 98)
-                            {
-                                name = name[0..98];
-                            }
-                            tasks.Add(thread.ModifyAsync(t => t.Name = name));
+                            senderName = senderName[0..nonMatch];
                         }
+                        senderName = ACCEPTABLE_NAME_CHARs.TrimToMatches(senderName);
+                        if (senderName.Length > 12)
+                        {
+                            senderName = senderName[0..10];
+                        }
+                        string name = $"({senderName}) {thread.Name}";
+                        if (name.Length > 98)
+                        {
+                            name = name[0..98];
+                        }
+                        tasks.Add(thread.ModifyAsync(t => t.Name = name));
                     }
-                    if (helper.InternalData.AutoPin && firstMessage is SocketUserMessage umessage)
-                    {
-                        tasks.Add(umessage.PinAsync());
-                    }
+                }
+                if (helper.InternalData.AutoPin && firstMessage is SocketUserMessage umessage)
+                {
+                    tasks.Add(umessage.PinAsync());
                 }
                 if (!string.IsNullOrWhiteSpace(helper.InternalData.FirstMessage))
                 {
