@@ -124,7 +124,7 @@ namespace DiscordAutoThreadBot
         }
 
         /// <summary>Temporary (in-RAM) list of seen threads, to avoid duplication.</summary>
-        public static HashSet<ulong> SeenThreads = new();
+        public static ConcurrentDictionary<ulong, byte> SeenThreads = new();
 
         public static ConcurrentDictionary<ulong, Action<SocketMessage>> MessageSpecialHandlers = new();
 
@@ -157,25 +157,35 @@ namespace DiscordAutoThreadBot
             {
                 return Task.CompletedTask;
             }
-            if (!SeenThreads.Add(thread.Id))
+            try
             {
-                return Task.CompletedTask;
-            }
-            if (Math.Abs(DateTimeOffset.Now.Subtract(thread.CreatedAt).TotalMinutes) > 5)
-            {
-                return Task.CompletedTask;
-            }
-            Task.Factory.StartNew(() =>
-            {
-                try
+                Console.WriteLine($"See new thread {thread.Id}, {thread.Name}");
+                if (!SeenThreads.TryAdd(thread.Id, 1))
                 {
-                    HandleNewThread_Internal(thread);
+                    Console.WriteLine("Thread is a duplicate, ignore");
+                    return Task.CompletedTask;
                 }
-                catch (Exception ex)
+                if (Math.Abs(DateTimeOffset.Now.Subtract(thread.CreatedAt).TotalMinutes) > 5)
                 {
-                    Console.Error.WriteLine($"Failed to handle a thread: {ex}");
+                    Console.WriteLine("Thread is pre-existing, ignore");
+                    return Task.CompletedTask;
                 }
-            });
+                Task.Factory.StartNew(() =>
+                {
+                    try
+                    {
+                        HandleNewThread_Internal(thread);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine($"Failed to handle a thread: {ex}");
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Broke handling new thread: {ex}");
+            }
             return Task.CompletedTask;
         }
 
