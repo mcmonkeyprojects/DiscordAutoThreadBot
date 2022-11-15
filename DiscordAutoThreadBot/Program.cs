@@ -66,7 +66,7 @@ namespace DiscordAutoThreadBot
             bot.Client.Ready += () =>
             {
                 bot.Client.SetGameAsync("for new threads", type: ActivityType.Watching);
-                Task.Factory.StartNew(() =>
+                Task.Run(() =>
                 {
                     try
                     {
@@ -100,7 +100,7 @@ namespace DiscordAutoThreadBot
             };
             bot.Client.GuildAvailable += (guild) =>
             {
-                Task.Factory.StartNew(() =>
+                Task.Run(() =>
                 {
                     Console.WriteLine($"Seen new guild: {guild.Id}");
                     try
@@ -171,7 +171,7 @@ namespace DiscordAutoThreadBot
                     return Task.CompletedTask;
                 }
                 Console.WriteLine("Begin new thread proc");
-                Task.Factory.StartNew(() =>
+                Task.Run(() =>
                 {
                     try
                     {
@@ -196,10 +196,10 @@ namespace DiscordAutoThreadBot
         {
             Console.WriteLine("new thread proc internal started");
             GuildDataHelper helper = GuildDataHelper.GetHelperFor(thread.Guild.Id);
+            List<Task> tasks = new();
             lock (helper.Locker)
             {
                 Console.WriteLine($"Load thread {thread.Id}");
-                List<Task> tasks = new();
                 string senderName = null;
                 int tries = 0;
                 long time = Environment.TickCount64;
@@ -255,6 +255,7 @@ namespace DiscordAutoThreadBot
                 }
                 if (helper.InternalData.AutoPin && firstMessage is SocketUserMessage umessage)
                 {
+                    Console.WriteLine($"Pin first message {umessage.Id} in thread {thread.Id}");
                     tasks.Add(umessage.PinAsync());
                 }
                 if (!string.IsNullOrWhiteSpace(helper.InternalData.FirstMessage))
@@ -282,13 +283,13 @@ namespace DiscordAutoThreadBot
                         }
                     }
                 }
-                Console.WriteLine($"Wait on thread {thread.Id}");
-                foreach (Task task in tasks)
-                {
-                    task.Wait();
-                }
-                Console.WriteLine($"Completed thread {thread.Id}");
             }
+            Console.WriteLine($"Wait on thread {thread.Id}");
+            foreach (Task task in tasks)
+            {
+                task.Wait(TimeSpan.FromSeconds(30));
+            }
+            Console.WriteLine($"Completed thread {thread.Id}");
         }
 
         public static bool ShouldInclude(GuildDataHelper.UserData data, SocketThreadChannel thread)
