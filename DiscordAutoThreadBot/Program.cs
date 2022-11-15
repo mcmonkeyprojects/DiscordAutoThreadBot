@@ -170,6 +170,7 @@ namespace DiscordAutoThreadBot
                     Console.WriteLine("Thread is pre-existing, ignore");
                     return Task.CompletedTask;
                 }
+                Console.WriteLine("Begin new thread proc");
                 Task.Factory.StartNew(() =>
                 {
                     try
@@ -193,6 +194,7 @@ namespace DiscordAutoThreadBot
 
         public static void HandleNewThread_Internal(SocketThreadChannel thread)
         {
+            Console.WriteLine("new thread proc internal started");
             GuildDataHelper helper = GuildDataHelper.GetHelperFor(thread.Guild.Id);
             lock (helper.Locker)
             {
