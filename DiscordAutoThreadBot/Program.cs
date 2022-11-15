@@ -36,7 +36,6 @@ namespace DiscordAutoThreadBot
                 Initialize = Initialize,
                 CommandPrefix = null,
                 ShouldPayAttentionToMessage = (message) => message is SocketUserMessage uMessage && uMessage.Channel is SocketGuildChannel,
-                GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.GuildMessages | GatewayIntents.GuildMembers,
                 OnShutdown = () =>
                 {
                     ConsoleCancelToken.Cancel();
