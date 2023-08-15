@@ -196,7 +196,7 @@ namespace DiscordAutoThreadBot
         {
             Console.WriteLine("new thread proc internal started");
             GuildDataHelper helper = GuildDataHelper.GetHelperFor(thread.Guild.Id);
-            List<Task> tasks = new();
+            List<(string, Task)> tasks = new();
             lock (helper.Locker)
             {
                 Console.WriteLine($"Load thread {thread.Id}");
@@ -250,13 +250,13 @@ namespace DiscordAutoThreadBot
                         {
                             name = name[0..98];
                         }
-                        tasks.Add(thread.ModifyAsync(t => t.Name = name));
+                        tasks.Add(("thread rename", thread.ModifyAsync(t => t.Name = name)));
                     }
                 }
                 if (helper.InternalData.AutoPin && firstMessage is SocketUserMessage umessage)
                 {
                     Console.WriteLine($"Pin first message {umessage.Id} in thread {thread.Id}");
-                    tasks.Add(umessage.PinAsync());
+                    tasks.Add(("pin message", umessage.PinAsync()));
                 }
                 if (!string.IsNullOrWhiteSpace(helper.InternalData.FirstMessage))
                 {
@@ -278,16 +278,23 @@ namespace DiscordAutoThreadBot
                         {
                             if (!thread.Users.Any(u => u.Id == user.Id))
                             {
-                                tasks.Add(thread.AddUserAsync(user));
+                                tasks.Add(($"add user {user.Id} == {user.Username}", thread.AddUserAsync(user)));
                             }
                         }
                     }
                 }
             }
             Console.WriteLine($"Wait on thread {thread.Id}");
-            foreach (Task task in tasks)
+            foreach ((string action, Task task) in tasks)
             {
-                task.Wait(TimeSpan.FromSeconds(30));
+                try
+                {
+                    task.Wait(TimeSpan.FromSeconds(30));
+                }
+                catch (Exception ex)
+                {
+                    Console.Write($"Error while '{action}' for thread {thread.Id}: {ex}");
+                }
             }
             Console.WriteLine($"Completed thread {thread.Id}");
         }
