@@ -278,15 +278,7 @@ namespace DiscordAutoThreadBot
                         {
                             if (!thread.Users.Any(u => u.Id == user.Id))
                             {
-                                //tasks.Add(($"add user {user.Id} == {user.Username}", thread.AddUserAsync(user)));
-                                try
-                                {
-                                    thread.AddUserAsync(user).Wait();
-                                }
-                                catch (Exception ex)
-                                {
-                                    Console.WriteLine($"Failed to add user {user.Id} to thread {thread.Id}: {ex}");
-                                }
+                                tasks.Add(($"add user {user.Id} == {user.Username}", thread.AddUserAsync(user)));
                             }
                         }
                     }
