@@ -12,6 +12,7 @@ using System.Threading;
 using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using System.Collections.Concurrent;
+using Discord.Rest;
 
 namespace DiscordAutoThreadBot
 {
@@ -196,7 +197,7 @@ namespace DiscordAutoThreadBot
         {
             Console.WriteLine("new thread proc internal started");
             GuildDataHelper helper = GuildDataHelper.GetHelperFor(thread.Guild.Id);
-            List<(string, Task)> tasks = new();
+            string message = "";
             lock (helper.Locker)
             {
                 Console.WriteLine($"Load thread {thread.Id}");
@@ -212,7 +213,7 @@ namespace DiscordAutoThreadBot
                 {
                     if (firstMessage is null)
                     {
-                        if (tries++ > 70) // 70 x100ms = 5 seconds
+                        if (tries++ > 70) // 70 x100ms = 7 seconds
                         {
                             break;
                         }
@@ -250,13 +251,13 @@ namespace DiscordAutoThreadBot
                         {
                             name = name[0..98];
                         }
-                        tasks.Add(("thread rename", thread.ModifyAsync(t => t.Name = name)));
+                        thread.ModifyAsync(t => t.Name = name).Wait();
                     }
                 }
                 if (helper.InternalData.AutoPin && firstMessage is SocketUserMessage umessage)
                 {
                     Console.WriteLine($"Pin first message {umessage.Id} in thread {thread.Id}");
-                    tasks.Add(("pin message", umessage.PinAsync()));
+                    umessage.PinAsync().Wait(); // TODO: Delete the "pinned a message" message?
                 }
                 if (!string.IsNullOrWhiteSpace(helper.InternalData.FirstMessage))
                 {
@@ -278,24 +279,16 @@ namespace DiscordAutoThreadBot
                         {
                             if (!thread.Users.Any(u => u.Id == user.Id))
                             {
-                                tasks.Add(($"add user {user.Id} == {user.Username}", thread.AddUserAsync(user)));
+                                message += $"{user.Mention} ";
                             }
                         }
                     }
                 }
             }
-            Console.WriteLine($"Wait on thread {thread.Id}");
-            foreach ((string action, Task task) in tasks)
-            {
-                try
-                {
-                    task.Wait(TimeSpan.FromSeconds(30));
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error while '{action}' for thread {thread.Id}: {ex}");
-                }
-            }
+            // Trick to add users silently
+            RestUserMessage sent = thread.SendMessageAsync("(...)").Result;
+            sent.ModifyAsync(m => m.Content = message).Wait();
+            sent.DeleteAsync().Wait();
             Console.WriteLine($"Completed thread {thread.Id}");
         }
 
