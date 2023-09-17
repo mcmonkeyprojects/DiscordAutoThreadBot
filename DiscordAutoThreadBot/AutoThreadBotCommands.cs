@@ -387,7 +387,7 @@ namespace DiscordAutoThreadBot
                 else
                 {
                     helper.InternalData.ChannelRoleLimits[channelId] = roleId;
-                    SendGenericPositiveMessageReply(command.Message, "RoleLimit Set", $"Set rolelimit on channel <#{channelId}> to role <&{roleId}>.");
+                    SendGenericPositiveMessageReply(command.Message, "RoleLimit Set", $"Set rolelimit on channel <#{channelId}> to role <@&{roleId}>.");
                 }
                 helper.Modified = true;
                 helper.Save();
