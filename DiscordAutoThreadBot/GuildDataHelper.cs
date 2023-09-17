@@ -85,6 +85,9 @@ namespace DiscordAutoThreadBot
 
             /// <summary>A map of user IDs to their data.</summary>
             public Dictionary<ulong, UserData> UserData = new();
+            
+            /// <summary>A map of Channel IDs to Role IDs to limit that channels auto-thread-adds to.</summary>
+            public Dictionary<ulong, ulong> ChannelRoleLimits = new();
         }
 
         public LockObject Locker = new();

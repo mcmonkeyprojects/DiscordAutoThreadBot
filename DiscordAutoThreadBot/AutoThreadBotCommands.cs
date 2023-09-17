@@ -22,6 +22,7 @@ namespace DiscordAutoThreadBot
                 + "\nThose with admin access on this Discord can type `@AutoThreadsBot add (user)` to add a user to the auto-threads-adder list,"
                 + "\nor type `@AutoThreadsBot remove (user)` to remove them from that list."
                 + "\nor type `@AutoThreadsBot user (user) whitelist/blacklist/clear (channels)` to configure a specific user to have a whitelist or a blacklist on specific channels (comma or space separated channel ID or tag list),"
+                + "\nor type `@AutoThreadsBot rolelimit (channel) (role)` to limit a channel to only add users if they have the given role (use `0` as the role to remove the limit),"
                 + "\nAlso `@AutoThreadsBot list` to view the current user list."
                 + "\nIf you're on the list, you can block this bot to hide the notifications but still be added to threads."
                 + "\nAlso `@AutoThreadsBot firstmessage (text)` to configure a message that the bot will show when a new thread is created."
@@ -337,6 +338,56 @@ namespace DiscordAutoThreadBot
                 else
                 {
                     SendGenericNegativeMessageReply(command.Message, $"Invalid Input", $"Can only be set to 'true' or 'false'.");
+                }
+                helper.Modified = true;
+                helper.Save();
+            }
+        }
+
+        /// <summary>A command for admins to apply a per-channel role limit.</summary>
+        public static void Command_RoleLimit(CommandData command)
+        {
+            if (command.Message is not SocketUserMessage message || message.Channel is not SocketGuildChannel channel)
+            {
+                return;
+            }
+            if (!(message.Author as SocketGuildUser).GuildPermissions.Administrator)
+            {
+                SendGenericNegativeMessageReply(command.Message, "Not for you", "Only users with the **Admin** permission may use the `rolelimit` command.");
+                return;
+            }
+            if (command.RawArguments.Length < 1 || !ulong.TryParse(PingIgnorableCharacters.TrimToNonMatches(command.RawArguments[0]), out ulong channelId))
+            {
+                SendGenericNegativeMessageReply(command.Message, "Invalid Input", "Give a channel ID or # mention. Any other input won't work.");
+                return;
+            }
+            if (channel.Guild.GetChannel(channelId) is null)
+            {
+                SendGenericNegativeMessageReply(command.Message, "Invalid Input", "That channel doesn't seem to exist.");
+                return;
+            }
+            if (command.RawArguments.Length < 2 || !ulong.TryParse(PingIgnorableCharacters.TrimToNonMatches(command.RawArguments[1]), out ulong roleId))
+            {
+                SendGenericNegativeMessageReply(command.Message, "Invalid Input", "Give a role ID or @ mention. Any other input won't work.");
+                return;
+            }
+            if (roleId != 0 && channel.Guild.GetRole(roleId) is null)
+            {
+                SendGenericNegativeMessageReply(command.Message, "Invalid Input", "That role doesn't seem to exist.");
+                return;
+            }
+            GuildDataHelper helper = GuildDataHelper.GetHelperFor(channel.Guild.Id);
+            lock (helper.Locker)
+            {
+                if (roleId == 0)
+                {
+                    helper.InternalData.ChannelRoleLimits.Remove(channelId);
+                    SendGenericPositiveMessageReply(command.Message, "Removed", $"Removed rolelimit on channel <#{channelId}>.");
+                }
+                else
+                {
+                    helper.InternalData.ChannelRoleLimits[channelId] = roleId;
+                    SendGenericPositiveMessageReply(command.Message, "RoleLimit Set", $"Set rolelimit on channel <#{channelId}> to role <&{roleId}>.");
                 }
                 helper.Modified = true;
                 helper.Save();

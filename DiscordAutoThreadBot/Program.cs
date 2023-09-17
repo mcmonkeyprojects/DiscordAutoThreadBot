@@ -61,6 +61,7 @@ namespace DiscordAutoThreadBot
             bot.RegisterCommand(AutoThreadBotCommands.Command_AutoPrefix, "autoprefix");
             bot.RegisterCommand(AutoThreadBotCommands.Command_AutoPin, "autopin");
             bot.RegisterCommand(AutoThreadBotCommands.Command_Archive, "archive");
+            bot.RegisterCommand(AutoThreadBotCommands.Command_RoleLimit, "rolelimit");
             bot.RegisterSlashCommand(AutoThreadBotCommands.SlashCommand_Archive, "archive");
             bot.Client.ThreadCreated += (thread) => NewThreadHandle(bot, thread);
             bot.Client.MessageReceived += (message) => NewMessageHandle(message);
@@ -263,6 +264,7 @@ namespace DiscordAutoThreadBot
                 {
                     thread.SendMessageAsync(text: helper.InternalData.FirstMessage).Wait();
                 }
+                ulong roleLimit = helper.InternalData.ChannelRoleLimits.GetValueOrDefault(thread.ParentChannel.Id);
                 foreach (ulong userId in helper.InternalData.Users.ToArray()) // ToArray to allow 'Remove' call
                 {
                     SocketGuildUser user = thread.Guild.GetUser(userId);
@@ -279,7 +281,14 @@ namespace DiscordAutoThreadBot
                         {
                             if (!thread.Users.Any(u => u.Id == user.Id))
                             {
-                                message += $"{user.Mention} ";
+                                if (roleLimit == default || user.Roles.Any(r => r.Id == roleLimit))
+                                {
+                                    message += $"{user.Mention} ";
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"Skip user {user.Id} to thread {thread.Id} due to role limit");
+                                }
                             }
                         }
                     }
