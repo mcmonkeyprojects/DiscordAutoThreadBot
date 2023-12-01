@@ -366,9 +366,12 @@ namespace DiscordAutoThreadBot
                 SendGenericNegativeMessageReply(command.Message, "Invalid Input", "That channel doesn't seem to exist.");
                 return;
             }
+            GuildDataHelper helper = GuildDataHelper.GetHelperFor(channel.Guild.Id);
             if (command.RawArguments.Length < 2 || !ulong.TryParse(PingIgnorableCharacters.TrimToNonMatches(command.RawArguments[1]), out ulong roleId))
             {
-                SendGenericNegativeMessageReply(command.Message, "Invalid Input", "Give a role ID or @ mention. Any other input won't work.");
+                ulong limit = helper.InternalData.ChannelRoleLimits.GetValueOrDefault(channelId);
+                SendGenericNegativeMessageReply(command.Message, "Invalid Input", $"Currently role limit for <#{channelId}> is {(limit == default ? "none" : $"<@&{limit}>")}."
+                    + "\nGive a role ID or @ mention. Any other input won't work.");
                 return;
             }
             if (roleId != 0 && channel.Guild.GetRole(roleId) is null)
@@ -376,7 +379,6 @@ namespace DiscordAutoThreadBot
                 SendGenericNegativeMessageReply(command.Message, "Invalid Input", "That role doesn't seem to exist.");
                 return;
             }
-            GuildDataHelper helper = GuildDataHelper.GetHelperFor(channel.Guild.Id);
             lock (helper.Locker)
             {
                 if (roleId == 0)

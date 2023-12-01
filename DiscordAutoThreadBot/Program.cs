@@ -265,6 +265,7 @@ namespace DiscordAutoThreadBot
                     thread.SendMessageAsync(text: helper.InternalData.FirstMessage).Wait();
                 }
                 ulong roleLimit = helper.InternalData.ChannelRoleLimits.GetValueOrDefault(thread.ParentChannel.Id);
+                string nameList = "";
                 foreach (ulong userId in helper.InternalData.Users.ToArray()) // ToArray to allow 'Remove' call
                 {
                     SocketGuildUser user = thread.Guild.GetUser(userId);
@@ -284,6 +285,7 @@ namespace DiscordAutoThreadBot
                                 if (roleLimit == default || user.Roles.Any(r => r.Id == roleLimit))
                                 {
                                     message += $"{user.Mention} ";
+                                    nameList += $"{user.Username}#{user.Discriminator} ({user.Id})\n";
                                 }
                                 else
                                 {
@@ -293,8 +295,10 @@ namespace DiscordAutoThreadBot
                         }
                     }
                 }
+                Console.WriteLine($"Thread {thread.Id} in channel {thread.ParentChannel.Id} has roleLimit {roleLimit} and thus user list: {nameList}");
             }
             // Trick to add users silently
+            Console.WriteLine($"Add users to thread {thread.Id}: {message}");
             RestUserMessage sent = thread.SendMessageAsync("(...)").Result;
             sent.ModifyAsync(m => m.Content = message).Wait();
             sent.DeleteAsync().Wait();
