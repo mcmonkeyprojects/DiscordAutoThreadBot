@@ -3,6 +3,12 @@ DiscordAutoThreadBot
 
 A simple Discord bot to allow users to automatically join any newly created thread.
 
+### Status
+
+This project is actively maintained and functional (as of late 2023 at least), however it is lower priority after the advent of Discord Forums. Its primary use case is for one specific Discord community (Denizen) and while outside users are welcome to use this bot or fork it or whatever, I don't necessarily have enough free time anymore to consistently provide support for use-cases outside my own needs.
+
+### Usage Details
+
 The way it works is simple: somebody with admin permission on the Discord can type `@AutoThreadsBot add (user)` to add a user to the list, or `remove` to remove them.
 
 The `(user)` can be either a user ID, or an `@ping` of the user.
@@ -57,7 +63,7 @@ You can do basically whatever you want (as long as you give credit), except you 
 
 The MIT License (MIT)
 
-Copyright (c) 2022 Alex "mcmonkey" Goodwin
+Copyright (c) 2022-2023 Alex "mcmonkey" Goodwin
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
