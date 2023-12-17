@@ -29,6 +29,8 @@ If you reach the limit, check `@AutoThreadsBot list` to see if there's any users
 
 You can also configure `@AutoThreadsBot firstmessage (text)` to set a message that the bot will post in any new thread, before adding users. You can use this to ping users to add them into threads too (as a way to reduce the delay for the ratelimit, at the cost of the annoying notification showing up for those users in the ping message).
 
+You can also configure `@AutoThreadsBot extramessage (text)` for the current thread-user-add hack to send additional text, for example a role ping. The current hack works by sending a blank message, then editing it to contain pings, then deleting the message - which effectively adds users to a thread without actually pinging them. This may not work in the future if Discord's API changes.
+
 The bot can also apply username-prefixing if wanted, via `@AutoThreadsBot autoprefix true`. This is a feature we use on the Denizen discord to more readily distinguish threads. It applies the format `(Username) titlehere`, so for example if `mcmonkey` creates a thread `I need help`, it becomes `(mcmonkey) I need help`. This will disable if the thread title already has a prefix.
 
 You can also use `@AutoThreadsBot autopin true` to enable automatic pinning of the first post in a thread after it's created.
