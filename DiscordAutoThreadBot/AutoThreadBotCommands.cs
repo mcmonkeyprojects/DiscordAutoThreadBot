@@ -28,12 +28,27 @@ namespace DiscordAutoThreadBot
                 + "\nAlso `@AutoThreadsBot firstmessage (text)` to configure a message that the bot will show when a new thread is created."
                 + "\nAlso `@AutoThreadsBot extramessage (text)` to configure extra message text (eg role pings) for the bot to use when forcing users into a thread."
                 + "\nAlso, `@AutoThreadsBot autoprefix true` to enable (or `false` to disable) automatic username thread prefixes."
+                + "\nAlso, `@AutoThreadsBot adminrole (role)` to set a specific role as having thread-bot admin."
                 + "\nAlso, anybody who has the `Manage Threads` permission (or that own a thread) may use `/archive` or `@AutoThreadsBot archive` to archive a thread without locking it."
                 + "\n\nI'm [open source](https://github.com/mcmonkeyprojects/DiscordAutoThreadBot)!");
         }
 
         /// <summary>Characters that can be stripped from an '@' ping.</summary>
         public static AsciiMatcher PingIgnorableCharacters = new("<>!@");
+
+        public static bool IsAdmin(SocketGuild guild, SocketGuildUser user)
+        {
+            if (user.GuildPermissions.Administrator)
+            {
+                return true;
+            }
+            GuildDataHelper helper = GuildDataHelper.GetHelperFor(guild.Id);
+            if (helper.InternalData.AdminRole == 0)
+            {
+                return false;
+            }
+            return user.Roles.Any(r => r.Id == helper.InternalData.AdminRole);
+        }
 
         /// <summary>A command for admins to add a user to the list.</summary>
         public static void Command_Add(CommandData command)
@@ -42,7 +57,7 @@ namespace DiscordAutoThreadBot
             {
                 return;
             }
-            if (!(message.Author as SocketGuildUser).GuildPermissions.Administrator)
+            if (!IsAdmin(channel.Guild, message.Author as SocketGuildUser))
             {
                 SendGenericNegativeMessageReply(command.Message, "Not for you", "Only users with the **Admin** permission may use the `add` command.");
                 return;
@@ -187,7 +202,7 @@ namespace DiscordAutoThreadBot
             {
                 return;
             }
-            if (!(message.Author as SocketGuildUser).GuildPermissions.Administrator)
+            if (!IsAdmin(channel.Guild, message.Author as SocketGuildUser))
             {
                 SendGenericNegativeMessageReply(command.Message, "Not for you", "Only users with the **Admin** permission may use the `remove` command.");
                 return;
@@ -220,7 +235,7 @@ namespace DiscordAutoThreadBot
             {
                 return;
             }
-            if (!(message.Author as SocketGuildUser).GuildPermissions.Administrator)
+            if (!IsAdmin(channel.Guild, message.Author as SocketGuildUser))
             {
                 SendGenericNegativeMessageReply(command.Message, "Not for you", "Only users with the **Admin** permission may use the `list` command.");
                 return;
@@ -239,7 +254,7 @@ namespace DiscordAutoThreadBot
             {
                 return;
             }
-            if (!(message.Author as SocketGuildUser).GuildPermissions.Administrator)
+            if (!IsAdmin(channel.Guild, message.Author as SocketGuildUser))
             {
                 SendGenericNegativeMessageReply(command.Message, "Not for you", "Only users with the **Admin** permission may use the `firstmessage` command.");
                 return;
@@ -274,7 +289,7 @@ namespace DiscordAutoThreadBot
             {
                 return;
             }
-            if (!(message.Author as SocketGuildUser).GuildPermissions.Administrator)
+            if (!IsAdmin(channel.Guild, message.Author as SocketGuildUser))
             {
                 SendGenericNegativeMessageReply(command.Message, "Not for you", "Only users with the **Admin** permission may use the `extramessage` command.");
                 return;
@@ -309,7 +324,7 @@ namespace DiscordAutoThreadBot
             {
                 return;
             }
-            if (!(message.Author as SocketGuildUser).GuildPermissions.Administrator)
+            if (!IsAdmin(channel.Guild, message.Author as SocketGuildUser))
             {
                 SendGenericNegativeMessageReply(command.Message, "Not for you", "Only users with the **Admin** permission may use the `autoprefix` command.");
                 return;
@@ -348,7 +363,7 @@ namespace DiscordAutoThreadBot
             {
                 return;
             }
-            if (!(message.Author as SocketGuildUser).GuildPermissions.Administrator)
+            if (!IsAdmin(channel.Guild, message.Author as SocketGuildUser))
             {
                 SendGenericNegativeMessageReply(command.Message, "Not for you", "Only users with the **Admin** permission may use the `autopin` command.");
                 return;
@@ -387,7 +402,7 @@ namespace DiscordAutoThreadBot
             {
                 return;
             }
-            if (!(message.Author as SocketGuildUser).GuildPermissions.Administrator)
+            if (!IsAdmin(channel.Guild, message.Author as SocketGuildUser))
             {
                 SendGenericNegativeMessageReply(command.Message, "Not for you", "Only users with the **Admin** permission may use the `rolelimit` command.");
                 return;
@@ -406,7 +421,7 @@ namespace DiscordAutoThreadBot
             if (command.RawArguments.Length < 2 || !ulong.TryParse(PingIgnorableCharacters.TrimToNonMatches(command.RawArguments[1]), out ulong roleId))
             {
                 ulong limit = helper.InternalData.ChannelRoleLimits.GetValueOrDefault(channelId);
-                SendGenericNegativeMessageReply(command.Message, "Invalid Input", $"Currently role limit for <#{channelId}> is {(limit == default ? "none" : $"<@&{limit}>")}."
+                SendGenericNegativeMessageReply(command.Message, "Invalid Input", $"Current role limit for <#{channelId}> is {(limit == default ? "none" : $"<@&{limit}>")}."
                     + "\nGive a role ID or @ mention. Any other input won't work.");
                 return;
             }
@@ -426,6 +441,46 @@ namespace DiscordAutoThreadBot
                 {
                     helper.InternalData.ChannelRoleLimits[channelId] = roleId;
                     SendGenericPositiveMessageReply(command.Message, "RoleLimit Set", $"Set rolelimit on channel <#{channelId}> to role <@&{roleId}>.");
+                }
+                helper.Modified = true;
+                helper.Save();
+            }
+        }
+
+        /// <summary>A command for trues admins to set bot-admins.</summary>
+        public static void Command_AdminRole(CommandData command)
+        {
+            if (command.Message is not SocketUserMessage message || message.Channel is not SocketGuildChannel channel)
+            {
+                return;
+            }
+            if (!(message.Author as SocketGuildUser).GuildPermissions.Administrator)
+            {
+                SendGenericNegativeMessageReply(command.Message, "Not for you", "Only users with the **Admin** permission may use the `adminrole` command.");
+                return;
+            }
+            GuildDataHelper helper = GuildDataHelper.GetHelperFor(channel.Guild.Id);
+            if (command.RawArguments.Length < 1 || !ulong.TryParse(PingIgnorableCharacters.TrimToNonMatches(command.RawArguments[0]), out ulong roleId))
+            {
+                SendGenericNegativeMessageReply(command.Message, "Invalid Input", $"Current admin role is {(helper.InternalData.AdminRole == default ? "none" : $"<@&{helper.InternalData.AdminRole}>")}."
+                    + "\nGive a role ID or @ mention. Any other input won't work.");
+                return;
+            }
+            if (roleId != 0 && channel.Guild.GetRole(roleId) is null)
+            {
+                SendGenericNegativeMessageReply(command.Message, "Invalid Input", "That role doesn't seem to exist.");
+                return;
+            }
+            lock (helper.Locker)
+            {
+                helper.InternalData.AdminRole = roleId;
+                if (roleId == 0)
+                {
+                    SendGenericPositiveMessageReply(command.Message, "Removed", $"Removed admin role.");
+                }
+                else
+                {
+                    SendGenericPositiveMessageReply(command.Message, "AdminRole Set", $"Set AdminRole to <@&{roleId}>.");
                 }
                 helper.Modified = true;
                 helper.Save();

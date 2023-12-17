@@ -91,6 +91,9 @@ namespace DiscordAutoThreadBot
 
             /// <summary>If non-null: extra content / pings to slip into the edit-hack adder message.</summary>
             public string ExtraAddPings = "";
+
+            /// <summary>Optional role ID for bot-admins.</summary>
+            public ulong AdminRole = 0;
         }
 
         public LockObject Locker = new();

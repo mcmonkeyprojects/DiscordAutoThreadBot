@@ -35,6 +35,8 @@ The bot can also apply username-prefixing if wanted, via `@AutoThreadsBot autopr
 
 You can also use `@AutoThreadsBot autopin true` to enable automatic pinning of the first post in a thread after it's created.
 
+You can also use `@AutoThreadsBot adminrole (role)` to set a specific role as having bot-admin permission (or `0` to disable).
+
 Anybody who has the `Manage Threads` permission (or who owns a thread) can use `/archive` while in a thread to archive that thread without locking it. This also is available as a `@AutoThreadsBot archive` command. This is left in ThreadBot because Discord's developers have casually deleted the GUI button that does this natively in Discord with no explanation on two separate occasions, leaving us unable to archive threads for several days both times.
 
 ### Want To Add The Public Instance?

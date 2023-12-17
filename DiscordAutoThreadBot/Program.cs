@@ -63,6 +63,7 @@ namespace DiscordAutoThreadBot
             bot.RegisterCommand(AutoThreadBotCommands.Command_AutoPin, "autopin");
             bot.RegisterCommand(AutoThreadBotCommands.Command_Archive, "archive");
             bot.RegisterCommand(AutoThreadBotCommands.Command_RoleLimit, "rolelimit");
+            bot.RegisterCommand(AutoThreadBotCommands.Command_AdminRole, "adminrole");
             bot.RegisterSlashCommand(AutoThreadBotCommands.SlashCommand_Archive, "archive");
             bot.Client.ThreadCreated += (thread) => NewThreadHandle(bot, thread);
             bot.Client.MessageReceived += (message) => NewMessageHandle(message);
