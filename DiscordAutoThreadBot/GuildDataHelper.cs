@@ -88,6 +88,9 @@ namespace DiscordAutoThreadBot
             
             /// <summary>A map of Channel IDs to Role IDs to limit that channels auto-thread-adds to.</summary>
             public Dictionary<ulong, ulong> ChannelRoleLimits = new();
+
+            /// <summary>If non-null: extra content / pings to slip into the edit-hack adder message.</summary>
+            public string ExtraAddPings = "";
         }
 
         public LockObject Locker = new();

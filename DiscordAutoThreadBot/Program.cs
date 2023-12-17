@@ -58,6 +58,7 @@ namespace DiscordAutoThreadBot
             bot.RegisterCommand(AutoThreadBotCommands.Command_Remove, "remove");
             bot.RegisterCommand(AutoThreadBotCommands.Command_User, "user");
             bot.RegisterCommand(AutoThreadBotCommands.Command_FirstMessage, "firstmessage");
+            bot.RegisterCommand(AutoThreadBotCommands.Command_ExtraMessage, "extramessage");
             bot.RegisterCommand(AutoThreadBotCommands.Command_AutoPrefix, "autoprefix");
             bot.RegisterCommand(AutoThreadBotCommands.Command_AutoPin, "autopin");
             bot.RegisterCommand(AutoThreadBotCommands.Command_Archive, "archive");
@@ -296,6 +297,10 @@ namespace DiscordAutoThreadBot
                     }
                 }
                 Console.WriteLine($"Thread {thread.Id} in channel {thread.ParentChannel.Id} has roleLimit {roleLimit} and thus user list: {nameList}");
+            }
+            if (!string.IsNullOrWhiteSpace(helper.InternalData.ExtraAddPings))
+            {
+                message = $"{message}  {helper.InternalData.ExtraAddPings}";
             }
             // Trick to add users silently
             Console.WriteLine($"Add users to thread {thread.Id}: {message}");

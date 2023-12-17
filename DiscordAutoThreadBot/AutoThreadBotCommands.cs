@@ -26,6 +26,7 @@ namespace DiscordAutoThreadBot
                 + "\nAlso `@AutoThreadsBot list` to view the current user list."
                 + "\nIf you're on the list, you can block this bot to hide the notifications but still be added to threads."
                 + "\nAlso `@AutoThreadsBot firstmessage (text)` to configure a message that the bot will show when a new thread is created."
+                + "\nAlso `@AutoThreadsBot extramessage (text)` to configure extra message text (eg role pings) for the bot to use when forcing users into a thread."
                 + "\nAlso, `@AutoThreadsBot autoprefix true` to enable (or `false` to disable) automatic username thread prefixes."
                 + "\nAlso, anybody who has the `Manage Threads` permission (or that own a thread) may use `/archive` or `@AutoThreadsBot archive` to archive a thread without locking it."
                 + "\n\nI'm [open source](https://github.com/mcmonkeyprojects/DiscordAutoThreadBot)!");
@@ -249,7 +250,7 @@ namespace DiscordAutoThreadBot
                 if (command.CleanedArguments.IsEmpty())
                 {
                     SendGenericPositiveMessageReply(command.Message, $"First-Message", $"The current first-message setting is:\n{helper.InternalData.FirstMessage}"
-                        + "\n\nUse `@AutoThreadsBot first-message clear` to disable it, or `@AutoThreadsBot first-message (some text)` to configure it.");
+                        + "\n\nUse `@AutoThreadsBot firstmessage clear` to disable it, or `@AutoThreadsBot firstmessage (some text)` to configure it.");
                 }
                 else if (command.CleanedArguments[0].ToLowerFast() == "clear")
                 {
@@ -260,6 +261,41 @@ namespace DiscordAutoThreadBot
                 {
                     helper.InternalData.FirstMessage = command.Message.Content.After("firstmessage").Trim();
                     SendGenericPositiveMessageReply(command.Message, $"First-Message", $"First-Message set to:\n{helper.InternalData.FirstMessage}");
+                }
+                helper.Modified = true;
+                helper.Save();
+            }
+        }
+
+        /// <summary>A command for admins to configure the extra-message.</summary>
+        public static void Command_ExtraMessage(CommandData command)
+        {
+            if (command.Message is not SocketUserMessage message || message.Channel is not SocketGuildChannel channel)
+            {
+                return;
+            }
+            if (!(message.Author as SocketGuildUser).GuildPermissions.Administrator)
+            {
+                SendGenericNegativeMessageReply(command.Message, "Not for you", "Only users with the **Admin** permission may use the `extramessage` command.");
+                return;
+            }
+            GuildDataHelper helper = GuildDataHelper.GetHelperFor(channel.Guild.Id);
+            lock (helper.Locker)
+            {
+                if (command.CleanedArguments.IsEmpty())
+                {
+                    SendGenericPositiveMessageReply(command.Message, $"Extra-Message", $"The current extra-message setting is:\n{helper.InternalData.ExtraAddPings}"
+                        + "\n\nUse `@AutoThreadsBot extramessage clear` to disable it, or `@AutoThreadsBot extramessage (some text)` to configure it.");
+                }
+                else if (command.CleanedArguments[0].ToLowerFast() == "clear")
+                {
+                    helper.InternalData.ExtraAddPings = "";
+                    SendGenericPositiveMessageReply(command.Message, $"Extra-Message", $"Extra-Message disabled.");
+                }
+                else
+                {
+                    helper.InternalData.ExtraAddPings = command.Message.Content.After("extramessage").Trim();
+                    SendGenericPositiveMessageReply(command.Message, $"Extra-Message", $"Extra-Message set to:\n{helper.InternalData.ExtraAddPings}");
                 }
                 helper.Modified = true;
                 helper.Save();
