@@ -305,9 +305,12 @@ namespace DiscordAutoThreadBot
             }
             // Trick to add users silently
             Console.WriteLine($"Add users to thread {thread.Id}: {message}");
-            RestUserMessage sent = thread.SendMessageAsync("(...)").Result;
-            sent.ModifyAsync(m => m.Content = message).Wait();
-            sent.DeleteAsync().Wait();
+            if (!string.IsNullOrWhiteSpace(message))
+            {
+                RestUserMessage sent = thread.SendMessageAsync("(...)").Result;
+                sent.ModifyAsync(m => m.Content = message).Wait();
+                sent.DeleteAsync().Wait();
+            }
             Console.WriteLine($"Completed thread {thread.Id}");
         }
 
