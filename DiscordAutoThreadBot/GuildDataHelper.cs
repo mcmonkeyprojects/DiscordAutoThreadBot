@@ -21,7 +21,7 @@ namespace DiscordAutoThreadBot
         /// You don't have to edit anything else.
         /// ================================================================================
         /// </summary>
-        public const int MAXIMUM_PER_LIST = 15;
+        public const int MAXIMUM_PER_LIST = 30;
 
         /// <summary>Data per-guild.</summary>
         public static ConcurrentDictionary<ulong, GuildDataHelper> GuildLists = new();
