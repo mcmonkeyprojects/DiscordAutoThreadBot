@@ -62,7 +62,7 @@ namespace DiscordAutoThreadBot
             public bool IsWhitelist = false;
 
             /// <summary>Channel limit to apply as either a whitelist or blacklist.</summary>
-            public HashSet<ulong> ChannelLimit = new();
+            public HashSet<ulong> ChannelLimit = [];
 
             /// <summary>Whether to exclude this user from forum channels.</summary>
             public bool ForumExclude = false;
@@ -72,7 +72,7 @@ namespace DiscordAutoThreadBot
         public class Data : AutoConfiguration
         {
             /// <summary>A list of relevant user IDs.</summary>
-            public List<ulong> Users = new();
+            public List<ulong> Users = [];
 
             /// <summary>If non-null: a message to post when new threads are created.</summary>
             public string FirstMessage = "";
@@ -84,10 +84,10 @@ namespace DiscordAutoThreadBot
             public bool AutoPin = false;
 
             /// <summary>A map of user IDs to their data.</summary>
-            public Dictionary<ulong, UserData> UserData = new();
+            public Dictionary<ulong, UserData> UserData = [];
             
             /// <summary>A map of Channel IDs to Role IDs to limit that channels auto-thread-adds to.</summary>
-            public Dictionary<ulong, ulong> ChannelRoleLimits = new();
+            public Dictionary<ulong, ulong> ChannelRoleLimits = [];
 
             /// <summary>If non-null: extra content / pings to slip into the edit-hack adder message.</summary>
             public string ExtraAddPings = "";

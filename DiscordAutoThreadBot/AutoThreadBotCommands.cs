@@ -145,7 +145,7 @@ namespace DiscordAutoThreadBot
                         SendGenericNegativeMessageReply(command.Message, "Invalid Input", "Channel list contains invalid input.");
                         return;
                     }
-                    newData.ChannelLimit = channelTargets.SplitFast(',').Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => ulong.TryParse(s, out ulong val) ? val : 0).ToHashSet();
+                    newData.ChannelLimit = [.. channelTargets.SplitFast(',').Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => ulong.TryParse(s, out ulong val) ? val : 0)];
                     foreach (ulong channelId in newData.ChannelLimit)
                     {
                         if (channelId == 0 || channel.Guild.GetChannel(channelId) is null)

@@ -124,7 +124,7 @@ namespace DiscordAutoThreadBot
         public static void RegisterSlashCommands(DiscordBot bot)
         {
             SlashCommandBuilder archiveCommand = new SlashCommandBuilder().WithName("archive").WithDescription("Moves the current thread into archive without locking it. Requires 'Manage Threads' permission.");
-            bot.Client.BulkOverwriteGlobalApplicationCommandsAsync(new ApplicationCommandProperties[] { archiveCommand.Build() });
+            bot.Client.BulkOverwriteGlobalApplicationCommandsAsync([archiveCommand.Build()]);
         }
 
         /// <summary>Temporary (in-RAM) list of seen threads, to avoid duplication.</summary>
